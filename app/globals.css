@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --charcoal: #1C1C1C;
+    --cream: #F5F0E8;
+    --emerald: #10B981;
+    --vellum-bg: rgba(245, 240, 232, 0.4);
+    --vellum-border: rgba(255, 255, 255, 0.2);
+  }
+
+  body {
+    background-color: var(--charcoal);
+    color: var(--cream);
+    min-height: 100vh;
+    font-family: var(--font-sans);
+  }
+}
+
+@theme inline {
+  --color-charcoal: var(--charcoal);
+  --color-cream: var(--cream);
+  --color-emerald: var(--emerald);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', sans-serif;
+}
+
+@layer utilities {
+  .glass-vellum {
+    background: var(--vellum-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--vellum-border);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 3D Flip Styles */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  .card-container {
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-flipped {
+    transform: rotateY(180deg);
+  }
+
+  @keyframes number-jump {
+    0% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-10px) scale(1.2); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  .animate-number-jump {
+    animation: number-jump 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .shadow-3d {
+    box-shadow: 
+      0 1px 1px rgba(0,0,0,0.1),
+      0 2px 2px rgba(0,0,0,0.1),
+      0 4px 4px rgba(0,0,0,0.1),
+      0 8px 8px rgba(0,0,0,0.1);
+  }
+
+  @keyframes slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /*
+    haptic-pop — mimics the micro-bounce of a physical button press.
+    Sequence: settle → compress → overshoot → land.
+    Applied to the Upvote button on the QueueCard back face.
+  */
+  @keyframes haptic-pop {
+    0%   { transform: scale(1); }
+    20%  { transform: scale(0.92); }
+    55%  { transform: scale(1.08); }
+    75%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
+  }
+
+  .animate-haptic-pop {
+    animation: haptic-pop 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+  }
+}

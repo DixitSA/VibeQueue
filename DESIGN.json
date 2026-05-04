@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-04T00:27:18Z",
+  "title": "Design System: VibeQueue",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Signal Emerald", "canonical": "oklch(70% 0.17 163)", "tonalRamp": ["oklch(15% 0.17 163)", "oklch(30% 0.17 163)", "oklch(45% 0.17 163)", "oklch(60% 0.17 163)", "oklch(70% 0.17 163)", "oklch(80% 0.17 163)", "oklch(90% 0.17 163)", "oklch(95% 0.17 163)"] },
+      "neutral-bg": { "role": "background", "displayName": "Vellum Cream", "canonical": "oklch(96% 0.01 70)", "tonalRamp": ["oklch(20% 0.01 70)", "oklch(35% 0.01 70)", "oklch(50% 0.01 70)", "oklch(65% 0.01 70)", "oklch(80% 0.01 70)", "oklch(90% 0.01 70)", "oklch(96% 0.01 70)", "oklch(98% 0.01 70)"] },
+      "neutral-text": { "role": "text", "displayName": "Midnight Charcoal", "canonical": "oklch(18% 0.005 70)", "tonalRamp": ["oklch(10% 0.005 70)", "oklch(18% 0.005 70)", "oklch(30% 0.005 70)", "oklch(45% 0.005 70)", "oklch(60% 0.005 70)", "oklch(75% 0.005 70)", "oklch(90% 0.005 70)", "oklch(96% 0.005 70)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (Outfit)", "purpose": "High-impact headlines." },
+      "body": { "displayName": "Body (Inter)", "purpose": "Core task data and labels." }
+    },
+    "shadows": [
+      { "name": "shadow-3d", "value": "0 1px 1px rgba(0,0,0,0.1), 0 2px 2px rgba(0,0,0,0.1), 0 4px 4px rgba(0,0,0,0.1), 0 8px 8px rgba(0,0,0,0.1)", "purpose": "Simulates physical card thickness." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Snappy reveal for overlays and flips." },
+      { "name": "number-jump", "value": "cubic-bezier(0.175, 0.885, 0.32, 1.275)", "purpose": "Bouncy state feedback for numbers." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Standard call to action or upvote trigger.",
+      "html": "<button class=\"ds-btn-primary\">UPVOTE</button>",
+      "css": ".ds-btn-primary { background: #F5F0E8; color: #1C1C1C; padding: 8px 24px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid rgba(28, 28, 28, 0.1); border-radius: 9999px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: #ffffff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }"
+    },
+    {
+      "name": "Queue Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The primary container for track data in the jukebox.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-inner\"><h3>Starboy</h3><p>The Weeknd</p></div></div>",
+      "css": ".ds-card { background: #F5F0E8; border-radius: 4px; padding: 12px 16px; box-shadow: 0 1px 1px rgba(0,0,0,0.1), 0 2px 2px rgba(0,0,0,0.1), 0 4px 4px rgba(0,0,0,0.1), 0 8px 8px rgba(0,0,0,0.1); font-family: 'Inter', sans-serif; } .ds-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; margin: 0; color: #1C1C1C; } .ds-card p { font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(28, 28, 28, 0.6); margin: 4px 0 0 0; letter-spacing: 0.05em; }"
+    },
+    {
+      "name": "Search FAB",
+      "kind": "custom",
+      "description": "The persistent floating search entry point.",
+      "html": "<div class=\"ds-fab\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M12 4v16m8-8H4\"/></svg></div>",
+      "css": ".ds-fab { width: 56px; height: 56px; background: #F5F0E8; color: #1C1C1C; border-radius: 50%; display: flex; items-center: center; justify-content: center; backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 12px 32px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.2s; } .ds-fab:active { transform: scale(0.9); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Editorial Menu",
+    "overview": "VibeQueue is designed to feel like a high-end physical object—a well-curated menu in a dimly lit taproom. It rejects the generic 'SaaS-blue' aesthetics in favor of high-contrast, editorial typography and tactile interaction.",
+    "keyCharacteristics": ["High-Contrast Vellum", "Tactile Depth", "Strategic Emerald"],
+    "rules": [
+      { "name": "The Rarity Rule", "body": "The Signal Emerald accent must never exceed 10% of the total screen area.", "section": "colors" },
+      { "name": "The Depth-on-Action Rule", "body": "Depth is amplified during interaction (flip, focus) to indicate the active state.", "section": "elevation" }
+    ],
+    "dos": ["Do use OKLCH for color derivations", "Do use uppercase for metadata labels", "Do maintain 7:1 contrast ratios"],
+    "donts": ["Don't use neon gradients", "Don't use side-stripe borders", "Don't use SaaS Blue"]
+  }
+}
