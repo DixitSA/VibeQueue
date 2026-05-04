@@ -14,6 +14,8 @@ export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
   const venueId = searchParams.get('venueId') ?? (process.env.NEXT_PUBLIC_ADMIN_VENUE_ID ?? 'CHARLOTTE_TEST');
 
+  console.log(`[VibeQueue] Starting Spotify Auth for venue: ${venueId}`);
+
   const clientId    = process.env.SPOTIFY_CLIENT_ID;
   const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
 
