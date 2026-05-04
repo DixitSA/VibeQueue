@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState, useTransition } from 'react';
 import { getDevices, transferPlayback } from '@/lib/spotifyAdmin';
-import { updateVenueSettings } from '@/lib/venueSettings';
+import { updateVenueSettings } from '@/lib/venueActions';
 import type { SpotifyDevice, VenueSettings } from '@/types';
 
 interface ConnectionCardProps {

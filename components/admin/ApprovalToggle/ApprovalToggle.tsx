@@ -4,7 +4,7 @@
 // Persists manualApprovalMode to Firestore on toggle.
 
 import React, { useState } from 'react';
-import { updateVenueSettings } from '@/lib/venueSettings';
+import { updateVenueSettings } from '@/lib/venueActions';
 
 interface ApprovalToggleProps {
   venueId:            string;

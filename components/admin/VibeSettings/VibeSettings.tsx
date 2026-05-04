@@ -5,7 +5,7 @@
 // Saves to Firestore on each add/remove.
 
 import React, { useState, useRef, KeyboardEvent } from 'react';
-import { updateVenueSettings } from '@/lib/venueSettings';
+import { updateVenueSettings } from '@/lib/venueActions';
 import type { VenueSettings } from '@/types';
 
 interface VibeSettingsProps {

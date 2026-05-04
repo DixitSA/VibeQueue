@@ -16,7 +16,7 @@ import VibeSettings     from '@/components/admin/VibeSettings/VibeSettings';
 import AdminGuard       from '@/components/admin/AdminGuard/AdminGuard';
 import { useAdminShortcuts } from '@/hooks/useAdminShortcuts';
 import { skipTrack } from '@/lib/spotifyAdmin';
-import { updateVenueSettings } from '@/lib/venueSettings';
+import { updateVenueSettings } from '@/lib/venueActions';
 
 // Venue ID — driven by env var so the same codebase serves multiple venues.
 const VENUE_ID = process.env.NEXT_PUBLIC_ADMIN_VENUE_ID ?? 'CHARLOTTE_TEST';
