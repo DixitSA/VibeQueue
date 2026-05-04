@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import AlbumArt from '../AlbumArt/AlbumArt';
+import { incrementUpvote } from '@/lib/firestore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface QueueCardProps {
   id: string;
+  venueId: string;
   trackName: string;
   artistName: string;
   albumArt: string;
@@ -15,35 +17,53 @@ interface QueueCardProps {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function QueueCard({ trackName, artistName, albumArt, upvotes }: QueueCardProps) {
+export default function QueueCard({
+  id,
+  venueId,
+  trackName,
+  artistName,
+  albumArt,
+  upvotes,
+}: QueueCardProps) {
   const [isFlipped, setIsFlipped]               = useState(false);
   const [isUpvoted, setIsUpvoted]               = useState(false);
   const [optimisticUpvotes, setOptimisticUpvotes] = useState(upvotes);
   const [isJumping, setIsJumping]               = useState(false);
-  // Haptic-style pop on the upvote button — re-triggered on each click attempt
   const [isPopping, setIsPopping]               = useState(false);
 
-  // Swipe-to-upvote gesture state
+  // Swipe-to-upvote gesture
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwiping, setIsSwiping]     = useState(false);
   const [startX, setStartX]           = useState(0);
 
   // ── Upvote logic ────────────────────────────────────────────────────────────
+  // Optimistic UI: apply the +1 immediately, then write to Firestore.
+  // On network failure, roll back both the count and the upvoted state.
 
-  const triggerUpvote = () => {
+  const triggerUpvote = async () => {
     if (isUpvoted) return;
+
+    // 1. Optimistic update
     setIsUpvoted(true);
-    setOptimisticUpvotes(prev => prev + 1);
+    setOptimisticUpvotes((prev) => prev + 1);
     setIsJumping(true);
     setTimeout(() => setIsJumping(false), 400);
+
+    // 2. Persist to Firestore
+    try {
+      await incrementUpvote(venueId, id);
+    } catch (err) {
+      // 3. Rollback on failure
+      console.error('[VibeQueue] Upvote write failed — rolling back:', err);
+      setIsUpvoted(false);
+      setOptimisticUpvotes((prev) => prev - 1);
+    }
   };
 
   const handleUpvote = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Fire the pop animation every time the button is pressed (even if already upvoted)
-    // so the user gets tactile feedback on a repeat tap.
+    // Trigger haptic pop animation on every press (re-sets via rAF trick)
     setIsPopping(false);
-    // Force a reflow so the class can re-apply even if already set
     requestAnimationFrame(() => {
       setIsPopping(true);
       setTimeout(() => setIsPopping(false), 350);
@@ -89,7 +109,6 @@ export default function QueueCard({ trackName, artistName, albumArt, upvotes }: 
       onTouchEnd={handleTouchEnd}
       onClick={() => setIsFlipped(!isFlipped)}
       aria-label={`Flip card for ${trackName} by ${artistName}`}
-      // perspective-1000 lives here — the direct child uses preserve-3d
       className={`
         text-left appearance-none block relative w-full h-[80px]
         perspective-1000 cursor-pointer mb-3
@@ -110,7 +129,7 @@ export default function QueueCard({ trackName, artistName, albumArt, upvotes }: 
       <div
         className={`relative z-10 w-full h-full card-container preserve-3d shadow-3d rounded-sm ${isFlipped ? 'card-flipped' : ''}`}
         style={{
-          transform: isSwiping ? `translateX(${swipeOffset}px) rotateY(0deg)` : undefined,
+          transform:  isSwiping ? `translateX(${swipeOffset}px) rotateY(0deg)` : undefined,
           transition: isSwiping ? 'none' : '',
         }}
       >
@@ -135,7 +154,6 @@ export default function QueueCard({ trackName, artistName, albumArt, upvotes }: 
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Tap hint */}
             {!isFlipped && (
               <div className="flex items-center opacity-40">
                 <span className="text-[7px] uppercase font-bold tracking-[0.2em] text-charcoal mr-1 hidden sm:inline-block">
@@ -147,7 +165,6 @@ export default function QueueCard({ trackName, artistName, albumArt, upvotes }: 
               </div>
             )}
 
-            {/* Vote counter */}
             <div className="flex flex-col items-center border-l border-charcoal/10 pl-3 min-w-[36px]">
               <span
                 className={`text-charcoal font-display text-lg font-bold leading-none ${
@@ -178,11 +195,6 @@ export default function QueueCard({ trackName, artistName, albumArt, upvotes }: 
             </span>
           </div>
 
-          {/*
-            Upvote button — the `animate-haptic-pop` keyframe is defined in globals.css.
-            The class is toggled off/on via `isPopping` so every press re-triggers
-            the pop even if the user spams the button.
-          */}
           <button
             disabled={isUpvoted}
             onClick={handleUpvote}

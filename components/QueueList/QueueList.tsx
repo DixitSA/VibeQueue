@@ -1,57 +1,36 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import QueueCard from '../QueueCard/QueueCard';
 import QueueSkeleton from './QueueSkeleton';
+import { useQueue } from '@/hooks/useQueue';
 
-const MOCK_SONGS = [
-  {
-    id: '1',
-    trackName: 'Starboy',
-    artistName: 'The Weeknd',
-    albumArt: 'https://images.unsplash.com/photo-1619983081563-430f63602796?q=80&w=200&auto=format&fit=crop',
-    upvotes: 12
-  },
-  {
-    id: '2',
-    trackName: 'Blinding Lights',
-    artistName: 'The Weeknd',
-    albumArt: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200&auto=format&fit=crop',
-    upvotes: 8
-  },
-  {
-    id: '3',
-    trackName: 'Levitating',
-    artistName: 'Dua Lipa',
-    albumArt: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200&auto=format&fit=crop',
-    upvotes: 7
-  },
-  {
-    id: '4',
-    trackName: 'Save Your Tears',
-    artistName: 'The Weeknd',
-    albumArt: 'https://images.unsplash.com/photo-1514525253344-f814d074358a?q=80&w=200&auto=format&fit=crop',
-    upvotes: 5
-  },
-  {
-    id: '5',
-    trackName: 'Peaches',
-    artistName: 'Justin Bieber',
-    albumArt: 'https://invalid-url.com/broken.jpg',
-    upvotes: 3
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface QueueListProps {
+  venueId: string;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export default function QueueList({ venueId }: QueueListProps) {
+  const { songs, loading, error } = useQueue(venueId);
+
+  // ── Error state ─────────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div className="px-6 py-8 text-center">
+        <p className="text-cream/40 font-display text-sm uppercase tracking-widest">
+          Queue unavailable
+        </p>
+        <p className="text-cream/20 font-sans text-xs mt-2">
+          {error.message}
+        </p>
+      </div>
+    );
   }
-];
 
-export default function QueueList() {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate initial data fetch
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="px-6 py-8">
@@ -60,28 +39,48 @@ export default function QueueList() {
           Up Next
         </h2>
         <span className="text-cream/40 font-display text-xs uppercase tracking-widest">
-          {isLoading ? '--' : MOCK_SONGS.length} Songs
+          {loading ? '--' : `${songs.length} Song${songs.length !== 1 ? 's' : ''}`}
         </span>
       </div>
-      
-      {isLoading ? (
+
+      {loading ? (
         <QueueSkeleton />
-      ) : (
-        <div className="flex flex-col gap-1">
-          {MOCK_SONGS.map((song) => (
-            <QueueCard key={song.id} {...song} />
-          ))}
-        </div>
-      )}
-      
-      {!isLoading && (
-        <div className="mt-12 mb-8 text-center">
-          <div className="inline-block px-4 py-1 border border-cream/10 rounded-full">
-            <p className="text-cream/30 text-[10px] uppercase tracking-[0.3em] font-medium">
-              Scroll for more
-            </p>
+      ) : songs.length === 0 ? (
+        // Empty queue — invite the first request
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-16 h-16 bg-cream/5 rounded-full flex items-center justify-center">
+            <svg className="w-7 h-7 text-cream/20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+            </svg>
           </div>
+          <p className="text-cream/30 font-sans text-sm text-center max-w-[180px] leading-relaxed">
+            The queue is empty. Be the first to request a track.
+          </p>
         </div>
+      ) : (
+        <>
+          <div className="flex flex-col gap-1">
+            {songs.map((song) => (
+              <QueueCard
+                key={song.id}
+                id={song.id}
+                venueId={venueId}
+                trackName={song.title}
+                artistName={song.artist}
+                albumArt={song.albumArt}
+                upvotes={song.upvoteCount}
+              />
+            ))}
+          </div>
+
+          <div className="mt-12 mb-8 text-center">
+            <div className="inline-block px-4 py-1 border border-cream/10 rounded-full">
+              <p className="text-cream/30 text-[10px] uppercase tracking-[0.3em] font-medium">
+                Tap a card to upvote
+              </p>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

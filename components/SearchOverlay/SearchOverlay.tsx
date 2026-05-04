@@ -1,132 +1,99 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useTransition } from 'react';
 import AlbumArt from '../AlbumArt/AlbumArt';
+import { searchSpotify } from '@/lib/spotify';
+import { requestSong } from '@/lib/firestore';
+import type { SpotifyTrack } from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SearchOverlayProps {
   isOpen: boolean;
   onClose: () => void;
+  venueId: string;
+  /** Anonymous UID from useAuth — null while auth is still resolving */
+  uid: string | null;
 }
-
-interface MockTrack {
-  id: string;
-  trackName: string;
-  artistName: string;
-  albumArt: string;
-}
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-// Replaced at Spotify-integration step with live API calls.
-
-const MOCK_TRACKS: MockTrack[] = [
-  {
-    id: 'r1',
-    trackName: 'Midnight City',
-    artistName: 'M83',
-    albumArt:
-      'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop',
-  },
-  {
-    id: 'r2',
-    trackName: 'Blinding Lights',
-    artistName: 'The Weeknd',
-    albumArt:
-      'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200&auto=format&fit=crop',
-  },
-  {
-    id: 'r3',
-    trackName: 'Levitating',
-    artistName: 'Dua Lipa',
-    albumArt:
-      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200&auto=format&fit=crop',
-  },
-  {
-    id: 'r4',
-    trackName: 'Starboy',
-    artistName: 'The Weeknd ft. Daft Punk',
-    albumArt:
-      'https://images.unsplash.com/photo-1619983081563-430f63602796?q=80&w=200&auto=format&fit=crop',
-  },
-  {
-    id: 'r5',
-    trackName: 'Peaches',
-    artistName: 'Justin Bieber',
-    albumArt: '', // intentionally empty — exercises the vinyl fallback
-  },
-  {
-    id: 'r6',
-    trackName: 'Bad Guy',
-    artistName: 'Billie Eilish',
-    albumArt:
-      'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop',
-  },
-];
 
 // ─── SearchResultCard ─────────────────────────────────────────────────────────
-// Condensed, non-flipping card — same design DNA as QueueCard but optimised
-// for the search list: smaller art, tighter padding, single-action (+) button.
+// Condensed non-flipping card — same design DNA as QueueCard.
 
 function SearchResultCard({
   track,
   onAdd,
 }: {
-  track: MockTrack;
-  onAdd: (track: MockTrack) => void;
+  track: SpotifyTrack;
+  onAdd: (track: SpotifyTrack) => Promise<void>;
 }) {
-  const [added, setAdded] = useState(false);
+  const [added, setAdded]       = useState(false);
   const [isPopping, setIsPopping] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
-  const handleAdd = (e: React.MouseEvent) => {
+  const handleAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (added) return;
-    
+    if (added || isAdding) return;
+
+    // Haptic pop
     setIsPopping(false);
     requestAnimationFrame(() => {
       setIsPopping(true);
       setTimeout(() => setIsPopping(false), 350);
     });
 
-    setAdded(true);
-    onAdd(track);
+    setIsAdding(true);
+    try {
+      await onAdd(track);
+      setAdded(true);
+    } catch (err) {
+      console.error('[VibeQueue] Failed to add track:', err);
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
     <div className="flex items-center gap-3 py-3 border-b border-charcoal/[0.07] last:border-0">
-      <AlbumArt src={track.albumArt} alt={track.trackName} size="sm" />
+      <AlbumArt src={track.albumArt} alt={track.title} size="sm" />
 
       <div className="flex-1 min-w-0">
         <p className="text-charcoal font-display font-semibold text-sm truncate leading-snug">
-          {track.trackName}
+          {track.title}
         </p>
         <p className="text-charcoal/50 text-[10px] uppercase tracking-widest font-bold truncate mt-0.5">
-          {track.artistName}
+          {track.artist}
         </p>
       </div>
 
-      {/* Add / Added button */}
       <button
         onClick={handleAdd}
-        disabled={added}
-        aria-label={added ? `${track.trackName} added` : `Add ${track.trackName} to queue`}
+        disabled={added || isAdding}
+        aria-label={added ? `${track.title} added` : `Add ${track.title} to queue`}
         className={`
           flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center
           transition-all duration-300
           ${added
             ? 'bg-charcoal border-charcoal text-cream scale-95'
-            : 'bg-transparent border-charcoal/25 text-charcoal/40 hover:border-charcoal hover:text-charcoal active:scale-95'
+            : isAdding
+              ? 'border-charcoal/20 text-charcoal/20 cursor-wait'
+              : 'bg-transparent border-charcoal/25 text-charcoal/40 hover:border-charcoal hover:text-charcoal active:scale-95'
           }
           ${isPopping ? 'animate-haptic-pop' : ''}
         `}
       >
         {added ? (
-          /* Checkmark */
+          // Checkmark
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 13l4 4L19 7" />
           </svg>
+        ) : isAdding ? (
+          // Spinner
+          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>
         ) : (
-          /* Plus */
+          // Plus
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 4v16M4 12h16" />
           </svg>
@@ -137,47 +104,69 @@ function SearchResultCard({
 }
 
 // ─── SearchOverlay ────────────────────────────────────────────────────────────
-/*
-  Design spec:
-  • Full-screen (not bottom-sheet) — fills the viewport edge-to-edge
-  • Background: cream/93 + backdrop-blur-2xl  →  vellum-over-glass feel
-  • Search bar: prominent underline input, Monocle-style headline above it
-  • Results: live-filtered SearchResultCards, fade in as query changes
-  • Empty / no-query states handled gracefully
-*/
 
-export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
-  const [query, setQuery]   = useState('');
-  const [mounted, setMounted] = useState(false);
+export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchOverlayProps) {
+  const [query, setQuery]       = useState('');
+  const [results, setResults]   = useState<SpotifyTrack[]>([]);
+  const [mounted, setMounted]   = useState(false);
+  const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Derive results from query
-  const results = query.trim().length > 0
-    ? MOCK_TRACKS.filter(
-        (t) =>
-          t.trackName.toLowerCase().includes(query.toLowerCase()) ||
-          t.artistName.toLowerCase().includes(query.toLowerCase()),
-      )
-    : [];
+  // ── Debounced Spotify search ─────────────────────────────────────────────
+  // Waits 350 ms after the user stops typing before hitting the Server Action.
+  // useTransition keeps the UI responsive while the fetch is in-flight.
 
-  // Mount / unmount with animation gate
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setResults([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      startTransition(async () => {
+        const tracks = await searchSpotify(query);
+        setResults(tracks);
+      });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // ── Mount / unmount gate ─────────────────────────────────────────────────
+
   useEffect(() => {
     if (isOpen) {
       setMounted(true);
       document.body.style.overflow = 'hidden';
-      // Wait one frame for the element to paint before focusing
       setTimeout(() => inputRef.current?.focus(), 80);
     } else {
       document.body.style.overflow = '';
       const timer = setTimeout(() => {
         setMounted(false);
         setQuery('');
+        setResults([]);
       }, 400);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
+  // ── Add to queue ─────────────────────────────────────────────────────────
+
+  const handleAddTrack = async (track: SpotifyTrack) => {
+    if (!uid) {
+      console.warn('[VibeQueue] Cannot add track — auth not resolved yet.');
+      return;
+    }
+    await requestSong(venueId, track, uid);
+  };
+
   if (!mounted && !isOpen) return null;
+
+  // ── Render ───────────────────────────────────────────────────────────────
+
+  const showEmpty   = query.trim().length < 2;
+  const showNoMatch = query.trim().length >= 2 && !isPending && results.length === 0;
+  const showResults = results.length > 0;
 
   return (
     <div
@@ -208,7 +197,6 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           Find a Track.
         </h2>
 
-        {/* Underline-style input — Monocle editorial aesthetic */}
         <div className="relative">
           <input
             ref={inputRef}
@@ -226,13 +214,20 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             "
           />
 
-          {/* Clear button — only visible when query has text */}
-          {query.length > 0 && (
+          {/* Spinner while Spotify request is in-flight */}
+          {isPending && (
+            <div className="absolute right-0 top-1/2 -translate-y-1/2">
+              <svg className="w-5 h-5 text-charcoal/30 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            </div>
+          )}
+
+          {/* Clear button */}
+          {query.length > 0 && !isPending && (
             <button
-              onClick={() => {
-                setQuery('');
-                inputRef.current?.focus();
-              }}
+              onClick={() => { setQuery(''); setResults([]); inputRef.current?.focus(); }}
               aria-label="Clear search"
               className="absolute right-0 top-1/2 -translate-y-1/2 text-charcoal/30 hover:text-charcoal transition-colors"
             >
@@ -250,8 +245,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
       {/* ── Results / states ─────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-6">
 
-        {/* Empty query — prompt */}
-        {query.trim().length === 0 && (
+        {showEmpty && (
           <div className="flex flex-col items-center justify-center h-full pb-24 gap-4">
             <div className="w-16 h-16 bg-charcoal/5 rounded-full flex items-center justify-center">
               <svg className="w-7 h-7 text-charcoal/20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
@@ -259,13 +253,12 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
               </svg>
             </div>
             <p className="text-charcoal/30 font-sans text-sm text-center max-w-[200px] leading-relaxed">
-              Type to discover tracks and add them to the session.
+              Type at least 2 characters to search Spotify.
             </p>
           </div>
         )}
 
-        {/* Query with no matches */}
-        {query.trim().length > 0 && results.length === 0 && (
+        {showNoMatch && (
           <div className="flex flex-col items-center justify-center h-48 gap-3">
             <p className="text-charcoal/40 font-display text-sm uppercase tracking-widest">
               No results
@@ -276,20 +269,16 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           </div>
         )}
 
-        {/* Result list */}
-        {results.length > 0 && (
+        {showResults && (
           <div className="py-3">
             <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-charcoal/30 mb-3">
-              {results.length} Result{results.length !== 1 ? 's' : ''}
+              {results.length} Result{results.length !== 1 ? 's' : ''} · Spotify
             </p>
             {results.map((track) => (
               <SearchResultCard
                 key={track.id}
                 track={track}
-                onAdd={(t) => {
-                  // TODO: wire to Firestore queue write at integration step
-                  console.log('[VibeQueue] Add to queue →', t.trackName);
-                }}
+                onAdd={handleAddTrack}
               />
             ))}
           </div>
