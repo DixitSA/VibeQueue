@@ -14,6 +14,9 @@ import ModerationQueue  from '@/components/admin/ModerationQueue/ModerationQueue
 import ApprovalToggle   from '@/components/admin/ApprovalToggle/ApprovalToggle';
 import VibeSettings     from '@/components/admin/VibeSettings/VibeSettings';
 import AdminGuard       from '@/components/admin/AdminGuard/AdminGuard';
+import { useAdminShortcuts } from '@/hooks/useAdminShortcuts';
+import { skipTrack } from '@/lib/spotifyAdmin';
+import { updateVenueSettings } from '@/lib/venueSettings';
 
 // Venue ID — driven by env var so the same codebase serves multiple venues.
 const VENUE_ID = process.env.NEXT_PUBLIC_ADMIN_VENUE_ID ?? 'CHARLOTTE_TEST';
@@ -21,6 +24,18 @@ const VENUE_ID = process.env.NEXT_PUBLIC_ADMIN_VENUE_ID ?? 'CHARLOTTE_TEST';
 export default function AdminPage() {
   const { settings, loading } = useVenueSettings(VENUE_ID);
   const [activeTab, setActiveTab] = React.useState<'player' | 'queue'>('player');
+
+  // Keyboard shortcuts
+  useAdminShortcuts({
+    onSkip: async () => {
+      try { await skipTrack(VENUE_ID); } catch (e) { console.error('Keyboard skip failed:', e); }
+    },
+    onToggleApproval: async () => {
+      try { await updateVenueSettings(VENUE_ID, { manualApprovalMode: !settings.manualApprovalMode }); }
+      catch (e) { console.error('Keyboard approval toggle failed:', e); }
+    },
+    onSwitchTab: setActiveTab
+  });
 
   return (
     <AdminGuard>
@@ -71,10 +86,10 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* ── Split-screen main area ───────────────────────────────────────── */}
-        <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-cream/[0.07] overflow-hidden">
+        {/* ── Split-screen / Triple-pane main area ───────────────────────── */}
+        <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 lg:divide-x divide-cream/[0.07] overflow-hidden">
           
-          {/* Player Panel */}
+          {/* Panel 1: Live Player (Billboard) */}
           <section className={`flex flex-col overflow-y-auto scrollbar-thin ${activeTab === 'player' ? 'flex' : 'hidden lg:flex'}`}>
             <AdminPlayer
               venueId={VENUE_ID}
@@ -82,18 +97,35 @@ export default function AdminPage() {
             />
           </section>
 
-          {/* Queue Panel */}
+          {/* Panel 2: Moderation Queue */}
           <section className={`flex flex-col overflow-y-auto scrollbar-thin ${activeTab === 'queue' ? 'flex' : 'hidden lg:flex'}`}>
             <ModerationQueue
               venueId={VENUE_ID}
               manualApprovalMode={settings.manualApprovalMode}
             />
           </section>
+
+          {/* Panel 3: Quick Settings (Desktop 2xl only) */}
+          <section className="hidden 2xl:flex flex-col overflow-y-auto scrollbar-thin bg-black/10">
+            <div className="p-8 space-y-10">
+              <div className="space-y-4">
+                <p className="text-[9px] uppercase tracking-[0.35em] text-cream/30 font-bold font-display">Control Center</p>
+                <div className="grid gap-4">
+                  <ConnectionCard venueId={VENUE_ID} settings={settings} />
+                  <ApprovalToggle venueId={VENUE_ID} manualApprovalMode={settings.manualApprovalMode} />
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <p className="text-[9px] uppercase tracking-[0.35em] text-cream/30 font-bold font-display">Vibe Governance</p>
+                <VibeSettings venueId={VENUE_ID} settings={settings} />
+              </div>
+            </div>
+          </section>
         </main>
 
         {/* ── Bottom settings strip ────────────────────────────────────────── */}
-        {/* Hidden on mobile, or toggleable? Let's keep it visible but compact on mobile. */}
-        <footer className="border-t border-cream/[0.07] flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-cream/[0.07] bg-charcoal/90 backdrop-blur-xl pb-safe">
+        <footer className="2xl:hidden border-t border-cream/[0.07] flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-cream/[0.07] bg-charcoal/90 backdrop-blur-xl pb-safe">
           <div className="flex-1 min-w-0 p-5 md:p-6">
             <ConnectionCard venueId={VENUE_ID} settings={settings} />
           </div>
