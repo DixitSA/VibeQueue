@@ -86,59 +86,42 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* ── Split-screen / Triple-pane main area ───────────────────────── */}
-        {/* Using a more robust grid with min-widths to prevent squishing */}
-        <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-[1fr_1fr_400px] lg:divide-x divide-cream/[0.07] overflow-hidden">
+        {/* ── Split-screen main area ───────────────────────────────────────── */}
+        <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-cream/[0.07] overflow-hidden bg-charcoal">
           
-          {/* Panel 1: Live Player (Billboard) */}
-          <section className={`flex flex-col overflow-y-auto scrollbar-thin min-w-[320px] ${activeTab === 'player' ? 'flex' : 'hidden lg:flex'}`}>
-            <AdminPlayer
-              venueId={VENUE_ID}
-              spotifyConnected={settings.spotifyConnected}
-            />
+          {/* Panel 1: Live Player (Billboard) — Expansive */}
+          <section className={`flex flex-col overflow-y-auto scrollbar-thin ${activeTab === 'player' ? 'flex' : 'hidden lg:flex'}`}>
+            <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+               <div className="w-full max-w-4xl">
+                  <AdminPlayer
+                    venueId={VENUE_ID}
+                    spotifyConnected={settings.spotifyConnected}
+                  />
+               </div>
+            </div>
           </section>
 
-          {/* Panel 2: Moderation Queue */}
-          <section className={`flex flex-col overflow-y-auto scrollbar-thin min-w-[360px] ${activeTab === 'queue' ? 'flex' : 'hidden lg:flex'}`}>
+          {/* Panel 2: Moderation Queue — High Throughput */}
+          <section className={`flex flex-col overflow-y-auto scrollbar-thin ${activeTab === 'queue' ? 'flex' : 'hidden lg:flex'}`}>
             <ModerationQueue
               venueId={VENUE_ID}
               manualApprovalMode={settings.manualApprovalMode}
             />
           </section>
-
-          {/* Panel 3: Quick Settings (Desktop 2xl only) */}
-          <section className="hidden 2xl:flex flex-col overflow-y-auto scrollbar-thin bg-black/10 min-w-[400px]">
-            <div className="p-10 space-y-12">
-              <div className="space-y-6">
-                <p className="text-[9px] uppercase tracking-[0.35em] text-cream/30 font-bold font-display">Control Center</p>
-                <div className="flex flex-col gap-6">
-                  <ConnectionCard venueId={VENUE_ID} settings={settings} />
-                  <ApprovalToggle venueId={VENUE_ID} manualApprovalMode={settings.manualApprovalMode} />
-                </div>
-              </div>
-              
-              <div className="space-y-6">
-                <p className="text-[9px] uppercase tracking-[0.35em] text-cream/30 font-bold font-display">Vibe Governance</p>
-                <div className="bg-cream/5 border border-cream/10 rounded-sm">
-                  <VibeSettings venueId={VENUE_ID} settings={settings} />
-                </div>
-              </div>
-            </div>
-          </section>
         </main>
 
-        {/* ── Bottom settings strip ────────────────────────────────────────── */}
-        <footer className="2xl:hidden border-t border-cream/[0.07] flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-cream/[0.07] bg-charcoal/90 backdrop-blur-xl pb-safe">
-          <div className="flex-1 min-w-0 p-5 md:p-6">
+        {/* ── Bottom settings strip — Desktop Row ──────────────────────────── */}
+        <footer className="border-t border-cream/[0.07] flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-cream/[0.07] bg-charcoal/80 backdrop-blur-2xl pb-safe">
+          <div className="flex-1 min-w-0 p-6">
             <ConnectionCard venueId={VENUE_ID} settings={settings} />
           </div>
-          <div className="hidden md:flex flex-1 min-w-0 p-6">
+          <div className="flex-1 min-w-0 p-6">
             <ApprovalToggle
               venueId={VENUE_ID}
               manualApprovalMode={settings.manualApprovalMode}
             />
           </div>
-          <div className="hidden lg:flex flex-1 min-w-0 p-6">
+          <div className="flex-1 min-w-0 p-6">
             <VibeSettings venueId={VENUE_ID} settings={settings} />
           </div>
         </footer>
