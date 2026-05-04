@@ -40,11 +40,27 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
     });
   }, [venueId, spotifyConnected]);
 
-  // Poll every 5 s
+  // Poll every 5 s (only when tab is visible)
   useEffect(() => {
     fetchNowPlaying();
-    const interval = setInterval(fetchNowPlaying, 5000);
-    return () => clearInterval(interval);
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNowPlaying();
+      }
+    };
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchNowPlaying();
+      }
+    }, 5000);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchNowPlaying]);
 
   // Animate progress bar locally between polls
@@ -71,13 +87,36 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
   // ── Not connected state ──────────────────────────────────────────────────
   if (!spotifyConnected) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[320px] gap-4 p-8">
-        <div className="w-20 h-20 bg-cream/5 rounded-full flex items-center justify-center">
-          <svg className="w-9 h-9 text-cream/20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
-          </svg>
+      <div className="flex flex-col h-full p-12 justify-center">
+        <div className="max-w-xs mx-auto w-full space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <div className="space-y-2">
+            <h3 className="text-cream font-display text-2xl font-bold tracking-tight">System Offline</h3>
+            <p className="text-cream/30 text-xs uppercase tracking-widest font-bold">Account Authorization Required</p>
+          </div>
+          
+          <div className="space-y-6">
+            {[
+              { step: '01', title: 'Authenticate', desc: 'Connect your Spotify Premium account below.' },
+              { step: '02', title: 'Select Device', desc: 'Choose the active output from the list.' },
+              { step: '03', title: 'Sync Queue', desc: 'Live playback will appear here automatically.' }
+            ].map((item) => (
+              <div key={item.step} className="flex gap-4 group">
+                <span className="text-cream/20 font-display text-xs font-bold mt-1 group-hover:text-emerald transition-colors">{item.step}</span>
+                <div className="space-y-1">
+                  <p className="text-cream/80 font-display text-sm font-bold uppercase tracking-wide">{item.title}</p>
+                  <p className="text-cream/30 text-xs leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-6 border-t border-cream/5">
+             <div className="flex items-center gap-3 px-4 py-3 bg-cream/5 rounded-sm border border-cream/10">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
+                <span className="text-[10px] uppercase tracking-widest text-cream/40 font-bold">Bridge Disconnected</span>
+             </div>
+          </div>
         </div>
-        <p className="text-cream/30 font-sans text-sm text-center">Connect Spotify to see what&apos;s playing.</p>
       </div>
     );
   }

@@ -20,37 +20,33 @@ const VENUE_ID = process.env.NEXT_PUBLIC_ADMIN_VENUE_ID ?? 'CHARLOTTE_TEST';
 
 export default function AdminPage() {
   const { settings, loading } = useVenueSettings(VENUE_ID);
+  const [activeTab, setActiveTab] = React.useState<'player' | 'queue'>('player');
 
   return (
     <AdminGuard>
-      <div className="min-h-screen bg-charcoal flex flex-col">
+      <div className="h-screen bg-charcoal flex flex-col overflow-hidden select-none">
 
         {/* ── Header bar ──────────────────────────────────────────────────── */}
-        <header className="flex items-center justify-between px-8 py-5 border-b border-cream/[0.07] flex-shrink-0">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-              <h1 className="text-cream font-display font-bold text-lg tracking-tight">
-                VibeQueue
-              </h1>
-            </div>
-            <div className="h-4 w-[1px] bg-cream/10" />
-            <div className="flex items-center gap-2">
-               <span className="text-emerald/50 text-[10px] font-bold uppercase tracking-[0.2em] font-display">System Live</span>
-            </div>
+        <header className="flex items-center justify-between px-6 py-4 border-b border-cream/[0.07] flex-shrink-0 bg-charcoal/80 backdrop-blur-xl z-20">
+          <div className="flex items-center gap-4">
+            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)] ${settings.spotifyConnected ? 'bg-emerald animate-pulse' : 'bg-cream/10'}`} />
+            <h1 className="text-cream font-display font-bold text-base tracking-tight">
+              VibeQueue
+            </h1>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col items-end">
-              <span className="text-cream/40 font-display text-[10px] uppercase tracking-widest font-bold">
-                Operational Node
+          
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-cream/40 font-display text-[9px] uppercase tracking-widest font-bold">
+                {settings.spotifyConnected ? 'System Live' : 'System Standby'}
               </span>
-              <span className="text-cream/20 font-display text-[9px] uppercase tracking-[0.3em] font-bold mt-0.5">
+              <span className="text-cream/20 font-display text-[8px] uppercase tracking-[0.2em] font-bold mt-0.5">
                 {VENUE_ID}
               </span>
             </div>
             {loading && (
-              <div className="w-8 h-8 rounded-full border border-cream/5 flex items-center justify-center">
-                <svg className="w-3.5 h-3.5 text-cream/20 animate-spin" fill="none" viewBox="0 0 24 24">
+              <div className="w-6 h-6 rounded-full border border-cream/5 flex items-center justify-center">
+                <svg className="w-3 h-3 text-cream/20 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
@@ -59,37 +55,58 @@ export default function AdminPage() {
           </div>
         </header>
 
+        {/* ── Mobile Tab Switcher ────────────────────────────────────────── */}
+        <div className="lg:hidden flex border-b border-cream/[0.07] bg-charcoal/40">
+          <button 
+            onClick={() => setActiveTab('player')}
+            className={`flex-1 py-3 text-[10px] uppercase tracking-[0.2em] font-bold font-display transition-colors ${activeTab === 'player' ? 'text-emerald border-b border-emerald' : 'text-cream/30'}`}
+          >
+            Live Player
+          </button>
+          <button 
+            onClick={() => setActiveTab('queue')}
+            className={`flex-1 py-3 text-[10px] uppercase tracking-[0.2em] font-bold font-display transition-colors ${activeTab === 'queue' ? 'text-emerald border-b border-emerald' : 'text-cream/30'}`}
+          >
+            Moderation
+          </button>
+        </div>
+
         {/* ── Split-screen main area ───────────────────────────────────────── */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-cream/[0.07]">
-          <div className="flex flex-col overflow-y-auto">
+        <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-cream/[0.07] overflow-hidden">
+          
+          {/* Player Panel */}
+          <section className={`flex flex-col overflow-y-auto scrollbar-thin ${activeTab === 'player' ? 'flex' : 'hidden lg:flex'}`}>
             <AdminPlayer
               venueId={VENUE_ID}
               spotifyConnected={settings.spotifyConnected}
             />
-          </div>
-          <div className="flex flex-col overflow-y-auto min-h-[480px] lg:min-h-0">
+          </section>
+
+          {/* Queue Panel */}
+          <section className={`flex flex-col overflow-y-auto scrollbar-thin ${activeTab === 'queue' ? 'flex' : 'hidden lg:flex'}`}>
             <ModerationQueue
               venueId={VENUE_ID}
               manualApprovalMode={settings.manualApprovalMode}
             />
-          </div>
-        </div>
+          </section>
+        </main>
 
         {/* ── Bottom settings strip ────────────────────────────────────────── */}
-        <div className="border-t border-cream/[0.07] grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-cream/[0.07]">
-          <div className="p-6">
+        {/* Hidden on mobile, or toggleable? Let's keep it visible but compact on mobile. */}
+        <footer className="border-t border-cream/[0.07] flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-cream/[0.07] bg-charcoal/90 backdrop-blur-xl pb-safe">
+          <div className="flex-1 min-w-0 p-5 md:p-6">
             <ConnectionCard venueId={VENUE_ID} settings={settings} />
           </div>
-          <div className="p-6">
+          <div className="hidden md:flex flex-1 min-w-0 p-6">
             <ApprovalToggle
               venueId={VENUE_ID}
               manualApprovalMode={settings.manualApprovalMode}
             />
           </div>
-          <div className="p-6">
+          <div className="hidden lg:flex flex-1 min-w-0 p-6">
             <VibeSettings venueId={VENUE_ID} settings={settings} />
           </div>
-        </div>
+        </footer>
       </div>
     </AdminGuard>
   );
