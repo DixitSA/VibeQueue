@@ -16,15 +16,24 @@ interface SearchOverlayProps {
   uid: string | null;
 }
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TRENDING_TRACKS: SpotifyTrack[] = [
+  { id: '1', title: 'Midnight City', artist: 'M83', albumArt: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop' },
+  { id: '2', title: 'Starboy', artist: 'The Weeknd', albumArt: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200&auto=format&fit=crop' },
+  { id: '3', title: 'Blinding Lights', artist: 'The Weeknd', albumArt: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200&auto=format&fit=crop' },
+];
+
 // ─── SearchResultCard ─────────────────────────────────────────────────────────
-// Condensed non-flipping card — same design DNA as QueueCard.
 
 function SearchResultCard({
   track,
   onAdd,
+  index = 0,
 }: {
   track: SpotifyTrack;
   onAdd: (track: SpotifyTrack) => Promise<void>;
+  index?: number;
 }) {
   const [added, setAdded]       = useState(false);
   const [isPopping, setIsPopping] = useState(false);
@@ -34,7 +43,6 @@ function SearchResultCard({
     e.stopPropagation();
     if (added || isAdding) return;
 
-    // Haptic pop
     setIsPopping(false);
     requestAnimationFrame(() => {
       setIsPopping(true);
@@ -53,14 +61,26 @@ function SearchResultCard({
   };
 
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-charcoal/[0.07] last:border-0">
-      <AlbumArt src={track.albumArt} alt={track.title} size="sm" />
+    <div 
+      style={{ animationDelay: `${index * 50}ms` }}
+      className="flex items-center gap-4 py-4 border-b border-charcoal/[0.05] last:border-0 animate-slide-up opacity-0"
+    >
+      <div className="relative group">
+        <AlbumArt src={track.albumArt} alt={track.title} size="sm" />
+        {added && (
+          <div className="absolute inset-0 bg-emerald/80 flex items-center justify-center rounded-sm animate-in fade-in zoom-in duration-300">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        )}
+      </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-charcoal font-display font-semibold text-sm truncate leading-snug">
+        <p className="text-charcoal font-display font-bold text-base truncate leading-none mb-1">
           {track.title}
         </p>
-        <p className="text-charcoal/50 text-[10px] uppercase tracking-widest font-bold truncate mt-0.5">
+        <p className="text-charcoal/40 font-sans text-[9px] uppercase tracking-[0.18em] font-bold truncate">
           {track.artist}
         </p>
       </div>
@@ -68,33 +88,29 @@ function SearchResultCard({
       <button
         onClick={handleAdd}
         disabled={added || isAdding}
-        aria-label={added ? `${track.title} added` : `Add ${track.title} to queue`}
         className={`
-          flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center
-          transition-all duration-300
+          flex-shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center
+          transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
           ${added
-            ? 'bg-charcoal border-charcoal text-cream scale-95'
+            ? 'bg-emerald border-emerald text-white scale-110 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
             : isAdding
-              ? 'border-charcoal/20 text-charcoal/20 cursor-wait'
-              : 'bg-transparent border-charcoal/25 text-charcoal/40 hover:border-charcoal hover:text-charcoal active:scale-95'
+              ? 'border-charcoal/10 text-charcoal/10 cursor-wait'
+              : 'bg-transparent border-charcoal/10 text-charcoal/30 hover:border-charcoal hover:text-charcoal active:scale-90 active:bg-charcoal/5'
           }
           ${isPopping ? 'animate-haptic-pop' : ''}
         `}
       >
         {added ? (
-          // Checkmark
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 13l4 4L19 7" />
           </svg>
         ) : isAdding ? (
-          // Spinner
-          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
         ) : (
-          // Plus
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 4v16M4 12h16" />
           </svg>
         )}
@@ -139,8 +155,6 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
   };
 
   // ── Debounced Spotify search ─────────────────────────────────────────────
-  // Waits 350 ms after the user stops typing before hitting the Server Action.
-  // useTransition keeps the UI responsive while the fetch is in-flight.
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -179,10 +193,7 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
   // ── Add to queue ─────────────────────────────────────────────────────────
 
   const handleAddTrack = async (track: SpotifyTrack) => {
-    if (!uid) {
-      console.warn('[VibeQueue] Cannot add track — auth not resolved yet.');
-      return;
-    }
+    if (!uid) return;
     await requestSong(venueId, track, uid);
   };
 
@@ -190,9 +201,9 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  const showEmpty   = query.trim().length < 2;
-  const showNoMatch = query.trim().length >= 2 && !isPending && results.length === 0;
-  const showResults = results.length > 0;
+  const showOnboarding = query.trim().length < 1;
+  const showNoMatch    = query.trim().length >= 2 && !isPending && results.length === 0;
+  const showResults    = results.length > 0;
 
   return (
     <div
@@ -205,70 +216,65 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
       }}
       className={`
         fixed inset-0 z-[100]
-        bg-cream/93 backdrop-blur-2xl
+        bg-cream/93 backdrop-blur-3xl
         flex flex-col pb-safe
         transition-opacity duration-300
         ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
       `}
     >
-      {/* Handle for swipe-down indication */}
       <div className="w-full flex justify-center pt-3 pb-1 sm:hidden">
         <div className="w-12 h-1 bg-charcoal/10 rounded-full" />
       </div>
-      {/* ── Top bar ──────────────────────────────────────────────────────── */}
+
       <div className="flex items-center justify-between px-6 pt-14 pb-2">
         <p className="text-[9px] uppercase tracking-[0.25em] font-bold text-charcoal/35 font-display">
-          Add to Queue
+          Music Search
         </p>
         <button
           onClick={onClose}
-          className="text-charcoal/40 font-display text-xs uppercase tracking-widest font-bold hover:text-charcoal transition-colors"
+          className="text-charcoal/40 font-display text-[10px] uppercase tracking-widest font-bold hover:text-charcoal transition-colors px-2 py-1"
         >
-          Cancel
+          Close
         </button>
       </div>
 
-      {/* ── Headline + search input ───────────────────────────────────────── */}
       <div className="px-6 pt-3 pb-6">
-        <h2 className="text-charcoal font-display text-4xl font-bold tracking-tighter leading-none mb-6">
-          Find a Track.
+        <h2 className="text-charcoal font-display text-5xl font-bold tracking-tighter leading-none mb-6">
+          Find your Vibe.
         </h2>
 
-        <div className="relative">
+        <div className="relative group">
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Title, artist, or album…"
+            placeholder="Search artists or tracks…"
             className="
               w-full bg-transparent
-              border-b-2 border-charcoal/20 focus:border-charcoal
-              outline-none px-0 py-3
-              text-charcoal font-display text-xl font-medium
-              placeholder:text-charcoal/25
-              transition-colors duration-200
+              border-b-2 border-charcoal/10 focus:border-charcoal
+              outline-none px-0 py-4
+              text-charcoal font-display text-2xl font-medium
+              placeholder:text-charcoal/20
+              transition-all duration-300
             "
           />
 
-          {/* Spinner while Spotify request is in-flight */}
           {isPending && (
             <div className="absolute right-0 top-1/2 -translate-y-1/2">
-              <svg className="w-5 h-5 text-charcoal/30 animate-spin" fill="none" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-charcoal/20 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
             </div>
           )}
 
-          {/* Clear button */}
           {query.length > 0 && !isPending && (
             <button
               onClick={() => { setQuery(''); setResults([]); inputRef.current?.focus(); }}
-              aria-label="Clear search"
-              className="absolute right-0 top-1/2 -translate-y-1/2 text-charcoal/30 hover:text-charcoal transition-colors"
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-charcoal/20 hover:text-charcoal transition-colors bg-charcoal/5 rounded-full"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -276,48 +282,57 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
         </div>
       </div>
 
-      {/* ── Divider ───────────────────────────────────────────────────────── */}
-      <div className="h-px bg-charcoal/10 mx-6" />
-
-      {/* ── Results / states ─────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-6">
-
-        {showEmpty && (
-          <div className="flex flex-col items-center justify-center h-full pb-24 gap-4">
-            <div className="w-16 h-16 bg-charcoal/5 rounded-full flex items-center justify-center">
-              <svg className="w-7 h-7 text-charcoal/20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <p className="text-charcoal/30 font-sans text-sm text-center max-w-[200px] leading-relaxed">
-              Type at least 2 characters to search Spotify.
+      <div className="flex-1 overflow-y-auto px-6 hide-scrollbar">
+        {showOnboarding && (
+          <div className="py-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/30 mb-6 border-l-2 border-charcoal/10 pl-3">
+              Trending at Demo Taproom
             </p>
+            <div className="space-y-1">
+              {TRENDING_TRACKS.map((track, i) => (
+                <SearchResultCard 
+                  key={track.id} 
+                  track={track} 
+                  onAdd={handleAddTrack} 
+                  index={i}
+                />
+              ))}
+            </div>
+            
+            <div className="mt-12 p-6 bg-charcoal/5 rounded-sm border border-charcoal/[0.03]">
+              <p className="text-charcoal/40 text-xs leading-relaxed font-sans italic">
+                "Music is the shorthand of emotion." — Leo Tolstoy
+              </p>
+            </div>
           </div>
         )}
 
         {showNoMatch && (
-          <div className="flex flex-col items-center justify-center h-48 gap-3">
-            <p className="text-charcoal/40 font-display text-sm uppercase tracking-widest">
-              No results
+          <div className="flex flex-col items-center justify-center h-64 gap-3 animate-in fade-in duration-500">
+            <p className="text-charcoal/40 font-display text-sm uppercase tracking-[0.2em] font-bold">
+              No results found
             </p>
-            <p className="text-charcoal/25 font-sans text-xs text-center">
-              Try a different title or artist name.
+            <p className="text-charcoal/20 font-sans text-xs text-center max-w-[200px]">
+              We couldn't find any matches. Check your spelling or try another vibe.
             </p>
           </div>
         )}
 
         {showResults && (
-          <div className="py-3">
-            <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-charcoal/30 mb-3">
-              {results.length} Result{results.length !== 1 ? 's' : ''} · Spotify
+          <div className="py-6">
+            <p className="text-[9px] uppercase tracking-[0.35em] font-bold text-charcoal/25 mb-6">
+              Spotify Global Results
             </p>
-            {results.map((track) => (
-              <SearchResultCard
-                key={track.id}
-                track={track}
-                onAdd={handleAddTrack}
-              />
-            ))}
+            <div className="space-y-1">
+              {results.map((track, i) => (
+                <SearchResultCard
+                  key={track.id}
+                  track={track}
+                  onAdd={handleAddTrack}
+                  index={i}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

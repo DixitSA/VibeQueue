@@ -1,10 +1,11 @@
 // ─── Firestore write helpers ──────────────────────────────────────────────────
-// Client-side helpers only — called from Client Components.
+// Client-side helpers — called from Client Components.
 // All writes are validated by Firestore Security Rules server-side.
 
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   increment,
   serverTimestamp,
@@ -12,20 +13,19 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
-import type { SpotifyTrack } from '@/types';
+import type { SongStatus, SpotifyTrack } from '@/types';
 
 // ── Request a song ────────────────────────────────────────────────────────────
 
 /**
  * Writes a new song request to the venue's queue.
- * The requesting patron receives 1 implicit upvote (upvoteCount starts at 1).
- *
- * Collection path: venue_queues/{venueId}/queued_songs
+ * `status` defaults to 'approved'; pass 'pending' when manual approval is on.
  */
 export async function requestSong(
   venueId: string,
   track: SpotifyTrack,
   uid: string,
+  status: SongStatus = 'approved',
 ): Promise<void> {
   await addDoc(collection(db, `venue_queues/${venueId}/queued_songs`), {
     spotifyTrackId: track.id,
@@ -35,22 +35,45 @@ export async function requestSong(
     upvoteCount:    1,
     timestamp:      serverTimestamp(),
     requestedBy:    uid,
+    status,
   });
 }
 
 // ── Increment upvote ──────────────────────────────────────────────────────────
 
 /**
- * Atomically increments `upvoteCount` by 1 using Firestore's FieldValue.increment.
+ * Atomically increments `upvoteCount` by 1.
  * The UI applies an optimistic +1 before this resolves; on failure the caller
- * is responsible for rolling back the local state.
+ * rolls back local state.
  */
 export async function incrementUpvote(
   venueId: string,
   songId: string,
 ): Promise<void> {
-  const songRef = doc(db, `venue_queues/${venueId}/queued_songs`, songId);
-  await updateDoc(songRef, {
-    upvoteCount: increment(1),
-  });
+  await updateDoc(
+    doc(db, `venue_queues/${venueId}/queued_songs`, songId),
+    { upvoteCount: increment(1) },
+  );
+}
+
+// ── Admin: delete (trash) a song ──────────────────────────────────────────────
+
+export async function deleteSong(
+  venueId: string,
+  songId: string,
+): Promise<void> {
+  await deleteDoc(doc(db, `venue_queues/${venueId}/queued_songs`, songId));
+}
+
+// ── Admin: approve or reject a pending song ───────────────────────────────────
+
+export async function updateSongStatus(
+  venueId: string,
+  songId: string,
+  status: SongStatus,
+): Promise<void> {
+  await updateDoc(
+    doc(db, `venue_queues/${venueId}/queued_songs`, songId),
+    { status },
+  );
 }
