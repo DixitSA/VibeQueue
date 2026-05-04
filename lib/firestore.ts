@@ -56,24 +56,4 @@ export async function incrementUpvote(
   );
 }
 
-// ── Admin: delete (trash) a song ──────────────────────────────────────────────
-
-export async function deleteSong(
-  venueId: string,
-  songId: string,
-): Promise<void> {
-  await deleteDoc(doc(db, `venue_queues/${venueId}/queued_songs`, songId));
-}
-
-// ── Admin: approve or reject a pending song ───────────────────────────────────
-
-export async function updateSongStatus(
-  venueId: string,
-  songId: string,
-  status: SongStatus,
-): Promise<void> {
-  await updateDoc(
-    doc(db, `venue_queues/${venueId}/queued_songs`, songId),
-    { status },
-  );
-}
+// Moderation actions migrated to Server Actions in lib/venueActions.ts

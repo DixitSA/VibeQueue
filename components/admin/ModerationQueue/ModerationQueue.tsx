@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import AlbumArt from '@/components/AlbumArt/AlbumArt';
-import { deleteSong, updateSongStatus } from '@/lib/firestore';
+import { deleteSong, updateSongStatus } from '@/lib/venueActions';
 import { useModerationQueue } from '@/hooks/useModerationQueue';
 import type { QueuedSong } from '@/types';
 
