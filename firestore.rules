@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Venue Queues
+    match /venue_queues/{venueId} {
+      allow read: if true;
+      
+      match /queued_songs/{songId} {
+        // Anyone can see the queue
+        allow read: if true;
+        
+        // Any authenticated user can request a song
+        allow create: if request.auth != null 
+                      && request.resource.data.upvoteCount == 1
+                      && request.resource.data.requestedBy == request.auth.uid;
+        
+        // Any authenticated user can upvote
+        // Note: In a production app, you'd want to prevent multiple upvotes 
+        // from the same user via a subcollection or array check.
+        allow update: if request.auth != null
+                      && request.resource.data.upvoteCount == resource.data.upvoteCount + 1;
+      }
+    }
+  }
+}

@@ -13,7 +13,10 @@
     background-color: var(--charcoal);
     color: var(--cream);
     min-height: 100vh;
+    min-height: 100svh; /* Small Viewport Height for mobile browsers */
     font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none; /* Prevent rubber-banding on the root to protect sticky headers */
   }
 }
 
@@ -100,5 +103,14 @@
 
   .animate-haptic-pop {
     animation: haptic-pop 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+  }
+
+  /* Mobile-first utility for bottom safe areas */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
   }
 }

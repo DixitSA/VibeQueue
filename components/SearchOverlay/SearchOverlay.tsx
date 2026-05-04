@@ -112,6 +112,32 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // ── Swipe-to-dismiss ─────────────────────────────────────────────────────
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startY, setStartY]         = useState(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setStartY(e.touches[0].clientY);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const deltaY = e.touches[0].clientY - startY;
+    if (deltaY > 0) {
+      setDragOffset(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (dragOffset > 150) {
+      onClose();
+    }
+    setDragOffset(0);
+    setIsDragging(false);
+  };
+
   // ── Debounced Spotify search ─────────────────────────────────────────────
   // Waits 350 ms after the user stops typing before hitting the Server Action.
   // useTransition keeps the UI responsive while the fetch is in-flight.
@@ -170,14 +196,25 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
 
   return (
     <div
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ 
+        transform: dragOffset > 0 ? `translateY(${dragOffset}px)` : undefined,
+        transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+      }}
       className={`
         fixed inset-0 z-[100]
         bg-cream/93 backdrop-blur-2xl
-        flex flex-col
+        flex flex-col pb-safe
         transition-opacity duration-300
         ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
       `}
     >
+      {/* Handle for swipe-down indication */}
+      <div className="w-full flex justify-center pt-3 pb-1 sm:hidden">
+        <div className="w-12 h-1 bg-charcoal/10 rounded-full" />
+      </div>
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-6 pt-14 pb-2">
         <p className="text-[9px] uppercase tracking-[0.25em] font-bold text-charcoal/35 font-display">

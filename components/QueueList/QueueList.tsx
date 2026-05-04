@@ -33,7 +33,7 @@ export default function QueueList({ venueId }: QueueListProps) {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="px-6 py-8">
+    <div className="px-6 pt-8 pb-32 pb-safe">
       <div className="flex items-baseline justify-between mb-6">
         <h2 className="text-cream font-display text-2xl font-light uppercase tracking-tighter">
           Up Next

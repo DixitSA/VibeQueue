@@ -115,6 +115,7 @@ export default function QueueCard({
         transition-all duration-300
         focus:outline-none focus:ring-2 focus:ring-emerald
         focus:ring-offset-2 focus:ring-offset-charcoal rounded-sm
+        active:scale-[0.98]
         ${isUpvoted ? 'scale-[1.02]' : ''}
       `}
     >

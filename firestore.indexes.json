@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "queued_songs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "upvoteCount", "order": "DESCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

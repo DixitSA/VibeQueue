@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    // Tell Turbopack the project root is this directory, not the parent folder.
+    // Silences the "multiple lockfiles" workspace warning.
+    root: __dirname,
+  },
   images: {
     remotePatterns: [
       {

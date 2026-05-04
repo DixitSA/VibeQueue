@@ -15,8 +15,8 @@ export default function CurrentlyPlaying() {
   }, []);
 
   return (
-    <div className="sticky top-0 z-50 glass-vellum backdrop-blur-md px-6 py-4 flex flex-col gap-0">
-      <div className="flex items-center gap-4 mb-3">
+    <div className="sticky top-0 z-50 glass-vellum backdrop-blur-md px-6 pt-safe pb-3 flex flex-col gap-0 border-b border-cream/10">
+      <div className="flex items-center gap-3 mt-4 mb-2">
         <div className="relative">
           <div className="relative w-14 h-14 bg-cream/10 rounded-sm overflow-hidden flex-shrink-0 border border-cream/20">
             <Image 
