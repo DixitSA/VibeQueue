@@ -27,24 +27,34 @@ export default function AdminPage() {
 
         {/* ── Header bar ──────────────────────────────────────────────────── */}
         <header className="flex items-center justify-between px-8 py-5 border-b border-cream/[0.07] flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-2 h-2 rounded-full bg-emerald" />
-            <h1 className="text-cream font-display font-bold text-lg tracking-tight">
-              VibeQueue
-            </h1>
-            <span className="text-cream/20 font-display text-xs uppercase tracking-widest">
-              Command Center
-            </span>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
+              <h1 className="text-cream font-display font-bold text-lg tracking-tight">
+                VibeQueue
+              </h1>
+            </div>
+            <div className="h-4 w-[1px] bg-cream/10" />
+            <div className="flex items-center gap-2">
+               <span className="text-emerald/50 text-[10px] font-bold uppercase tracking-[0.2em] font-display">System Live</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-cream/30 font-display text-xs uppercase tracking-widest">
-              {VENUE_ID}
-            </span>
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-end">
+              <span className="text-cream/40 font-display text-[10px] uppercase tracking-widest font-bold">
+                Operational Node
+              </span>
+              <span className="text-cream/20 font-display text-[9px] uppercase tracking-[0.3em] font-bold mt-0.5">
+                {VENUE_ID}
+              </span>
+            </div>
             {loading && (
-              <svg className="w-3.5 h-3.5 text-cream/20 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
+              <div className="w-8 h-8 rounded-full border border-cream/5 flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-cream/20 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              </div>
             )}
           </div>
         </header>
