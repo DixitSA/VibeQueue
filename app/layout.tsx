@@ -32,11 +32,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable} h-full`}>
-      <body className="antialiased h-full">
-        {/* Mobile viewport container */}
-        <div className="mx-auto min-h-full max-w-md bg-charcoal shadow-2xl relative flex flex-col">
-          {children}
-        </div>
+      <body className="antialiased h-full bg-charcoal">
+        {children}
       </body>
     </html>
   );
