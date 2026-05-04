@@ -1,6 +1,7 @@
-// ─── GET /api/spotify/callback ────────────────────────────────────────────────
+// ─── GET /api/auth/callback/spotify ──────────────────────────────────────────
 // Handles the Spotify OAuth redirect, exchanges the code for tokens,
 // persists them to Firestore, and redirects back to /admin.
+// This path matches the user's existing Spotify Dashboard configuration.
 
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
