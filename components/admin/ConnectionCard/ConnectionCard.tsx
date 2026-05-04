@@ -65,11 +65,12 @@ export default function ConnectionCard({ venueId, settings }: ConnectionCardProp
         <a
           href={`/api/spotify/auth?venueId=${venueId}`}
           className="
-            w-full py-4 rounded-sm
+            w-full px-6 py-4 rounded-sm
             bg-cream text-charcoal
-            font-display font-bold text-sm uppercase tracking-widest
+            font-display font-bold text-xs sm:text-sm uppercase tracking-widest
             flex items-center justify-center gap-2
             hover:bg-white transition-colors active:scale-[0.98]
+            text-center leading-tight
           "
         >
           Connect Spotify Premium

@@ -87,10 +87,11 @@ export default function AdminPage() {
         </div>
 
         {/* ── Split-screen / Triple-pane main area ───────────────────────── */}
-        <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 lg:divide-x divide-cream/[0.07] overflow-hidden">
+        {/* Using a more robust grid with min-widths to prevent squishing */}
+        <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-[1fr_1fr_400px] lg:divide-x divide-cream/[0.07] overflow-hidden">
           
           {/* Panel 1: Live Player (Billboard) */}
-          <section className={`flex flex-col overflow-y-auto scrollbar-thin ${activeTab === 'player' ? 'flex' : 'hidden lg:flex'}`}>
+          <section className={`flex flex-col overflow-y-auto scrollbar-thin min-w-[320px] ${activeTab === 'player' ? 'flex' : 'hidden lg:flex'}`}>
             <AdminPlayer
               venueId={VENUE_ID}
               spotifyConnected={settings.spotifyConnected}
@@ -98,7 +99,7 @@ export default function AdminPage() {
           </section>
 
           {/* Panel 2: Moderation Queue */}
-          <section className={`flex flex-col overflow-y-auto scrollbar-thin ${activeTab === 'queue' ? 'flex' : 'hidden lg:flex'}`}>
+          <section className={`flex flex-col overflow-y-auto scrollbar-thin min-w-[360px] ${activeTab === 'queue' ? 'flex' : 'hidden lg:flex'}`}>
             <ModerationQueue
               venueId={VENUE_ID}
               manualApprovalMode={settings.manualApprovalMode}
@@ -106,19 +107,21 @@ export default function AdminPage() {
           </section>
 
           {/* Panel 3: Quick Settings (Desktop 2xl only) */}
-          <section className="hidden 2xl:flex flex-col overflow-y-auto scrollbar-thin bg-black/10">
-            <div className="p-8 space-y-10">
-              <div className="space-y-4">
+          <section className="hidden 2xl:flex flex-col overflow-y-auto scrollbar-thin bg-black/10 min-w-[400px]">
+            <div className="p-10 space-y-12">
+              <div className="space-y-6">
                 <p className="text-[9px] uppercase tracking-[0.35em] text-cream/30 font-bold font-display">Control Center</p>
-                <div className="grid gap-4">
+                <div className="flex flex-col gap-6">
                   <ConnectionCard venueId={VENUE_ID} settings={settings} />
                   <ApprovalToggle venueId={VENUE_ID} manualApprovalMode={settings.manualApprovalMode} />
                 </div>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <p className="text-[9px] uppercase tracking-[0.35em] text-cream/30 font-bold font-display">Vibe Governance</p>
-                <VibeSettings venueId={VENUE_ID} settings={settings} />
+                <div className="bg-cream/5 border border-cream/10 rounded-sm">
+                  <VibeSettings venueId={VENUE_ID} settings={settings} />
+                </div>
               </div>
             </div>
           </section>

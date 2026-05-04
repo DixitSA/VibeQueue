@@ -90,8 +90,8 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
       <div className="flex flex-col h-full p-12 justify-center">
         <div className="max-w-xs mx-auto w-full space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
           <div className="space-y-2">
-            <h3 className="text-cream font-display text-2xl font-bold tracking-tight">System Offline</h3>
-            <p className="text-cream/30 text-xs uppercase tracking-widest font-bold">Account Authorization Required</p>
+            <h3 className="text-cream font-display text-xl sm:text-2xl font-bold tracking-tight">System Offline</h3>
+            <p className="text-cream/30 text-[10px] sm:text-xs uppercase tracking-widest font-bold">Account Authorization Required</p>
           </div>
           
           <div className="space-y-6">
@@ -174,10 +174,10 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
 
       {/* Track info — BILLBOARD MODE for distance legibility */}
       <div className="flex flex-col gap-2">
-        <h2 className="text-cream font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tighter leading-[0.9] break-words">
+        <h2 className="text-cream font-display text-4xl sm:text-5xl lg:text-6xl 2xl:text-7xl font-bold tracking-tighter leading-[0.9] break-words">
           {nowPlaying.trackName}
         </h2>
-        <p className="text-cream/40 font-display text-xl uppercase tracking-widest font-medium mt-2">
+        <p className="text-cream/40 font-display text-lg sm:text-xl uppercase tracking-widest font-medium mt-2">
           {nowPlaying.artistName}
         </p>
       </div>
