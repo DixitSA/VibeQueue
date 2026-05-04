@@ -3,8 +3,7 @@
 // persists them to Firestore, and redirects back to /admin.
 
 import { NextResponse } from 'next/server';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
@@ -48,12 +47,16 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.redirect(`${origin}/admin?error=token_exchange_failed`);
   }
 
-  // Persist tokens to Firestore — server-side only write
-  await setDoc(doc(db, 'venue_settings', venueId), {
+  // 1. Persist sensitive tokens to private vault
+  await adminDb.collection('venue_secrets').doc(venueId).set({
     spotifyAccessToken:  tokenData.access_token,
     spotifyRefreshToken: tokenData.refresh_token,
     tokenExpiresAt:      new Date(Date.now() + tokenData.expires_in * 1000),
-    spotifyConnected:    true,
+  }, { merge: true });
+
+  // 2. Persist public connection flag to public settings
+  await adminDb.collection('venue_settings').doc(venueId).set({
+    spotifyConnected: true,
   }, { merge: true });
 
   return NextResponse.redirect(`${origin}/admin?connected=true`);
