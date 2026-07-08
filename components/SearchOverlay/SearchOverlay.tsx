@@ -176,14 +176,25 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid, manualApp
   useEffect(() => {
     if (query.trim().length < 2) return;
 
+    // clearTimeout only cancels the debounce timer if it hasn't fired yet —
+    // it does NOT abort an in-flight searchSpotify call. Without this guard,
+    // a slower, older request (e.g. for an earlier keystroke, or just an
+    // unlucky network hiccup) can resolve after a newer one and stomp on
+    // the current results with stale — sometimes empty — data. Same
+    // cancelled-flag pattern as the trending-tracks fetch above.
+    let cancelled = false;
+
     const timer = setTimeout(() => {
       startTransition(async () => {
         const tracks = await searchSpotify(query);
-        setResults(tracks);
+        if (!cancelled) setResults(tracks);
       });
     }, 350);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [query]);
 
   // ── Mount / unmount gate ─────────────────────────────────────────────────
