@@ -57,6 +57,43 @@ interface RawSpotifyTrack {
   };
 }
 
+// ── Input validation ───────────────────────────────────────────────────────────
+
+// Reject/truncate absurdly long queries before they ever hit the Spotify API.
+const MAX_QUERY_LENGTH = 100;
+
+// ── Rate guard ──────────────────────────────────────────────────────────────────
+//
+// This Server Action compiles to a public, unauthenticated HTTP endpoint with
+// no request-identifying info (no IP/uid) passed in, so we can't key a limiter
+// per-caller here. As a stopgap, cap the *total* number of calls the whole
+// process will serve in a rolling fixed window, to bound Spotify API quota
+// consumption and basic flooding.
+//
+// IMPORTANT — this is a best-effort, single-instance-only guard:
+//   - State is an in-memory module-level counter, so it resets on every
+//     restart/deploy and is NOT shared across multiple server instances,
+//     regions, or serverless function invocations.
+//   - It does nothing to stop a distributed attacker spread across instances.
+// A real production deployment needs a distributed limiter (e.g. Upstash
+// Redis with a sliding-window or token-bucket algorithm) keyed by IP/session.
+// That's a follow-up, not something to build here.
+const RATE_LIMIT_WINDOW_MS = 10_000;
+const RATE_LIMIT_MAX_CALLS = 20;
+
+let windowStart = Date.now();
+let windowCallCount = 0;
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  if (now - windowStart >= RATE_LIMIT_WINDOW_MS) {
+    windowStart = now;
+    windowCallCount = 0;
+  }
+  windowCallCount += 1;
+  return windowCallCount > RATE_LIMIT_MAX_CALLS;
+}
+
 // ── Public Server Action ───────────────────────────────────────────────────────
 
 /**
@@ -66,12 +103,27 @@ interface RawSpotifyTrack {
  * Called directly from Client Components via Next.js Server Actions.
  */
 export async function searchSpotify(query: string): Promise<SpotifyTrack[]> {
-  if (!query.trim()) return [];
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  if (trimmed.length > MAX_QUERY_LENGTH) {
+    console.warn(
+      `[VibeQueue] Spotify search query rejected: exceeds ${MAX_QUERY_LENGTH} characters.`,
+    );
+    return [];
+  }
+
+  if (isRateLimited()) {
+    console.warn(
+      `[VibeQueue] Spotify search rate limit exceeded (${RATE_LIMIT_MAX_CALLS} calls / ${RATE_LIMIT_WINDOW_MS}ms). Rejecting request.`,
+    );
+    return [];
+  }
 
   const token = await getSpotifyToken();
 
   const url = new URL('https://api.spotify.com/v1/search');
-  url.searchParams.set('q', query.trim());
+  url.searchParams.set('q', trimmed);
   url.searchParams.set('type', 'track');
   url.searchParams.set('limit', '5');
 
