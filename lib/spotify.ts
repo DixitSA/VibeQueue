@@ -57,6 +57,59 @@ interface RawSpotifyTrack {
   };
 }
 
+// ── Bar-search result cleanup ──────────────────────────────────────────────────
+//
+// This app runs in Spotify's Development Mode, so track objects don't include
+// `popularity` — we can't sort by that. Spotify's own relevance search is
+// still solid at fuzzy-matching typos (a patron typing "brittny spears
+// toxic" reliably gets the real "Toxic" as a top hit), but the raw top-5
+// often gets padded with remixes, freestyles, and totally unrelated tracks
+// that happen to share a word. Over-fetch a larger pool and clean it up
+// before handing back only 5, rather than trusting Spotify's raw order.
+
+// NOTE: this app runs under Spotify's Development Mode quota, which caps
+// /v1/search's `limit` at 10 (not the documented max of 50) — confirmed by
+// testing directly against the API (limit=15+ returns a 400 "Invalid limit").
+const SEARCH_FETCH_LIMIT = 10;
+const RESULTS_RETURNED = 5;
+
+// Variant/noise markers that rarely match what someone asking for "that
+// song" actually wants, unless they typed the word themselves.
+const NOISE_PATTERN = /\b(remix|freestyle|slowed|sped[\s-]?up|nightcore|karaoke|tribute|instrumental|mashup|8d\s*audio|tiktok|reverb)\b/i;
+
+function normalizeKey(title: string, artist: string): string {
+  return `${title}|${artist}`.toLowerCase().replace(/[^a-z0-9|]/g, '');
+}
+
+/**
+ * Filters obvious noise variants (unless the patron explicitly searched for
+ * one) and drops duplicate title+artist matches, preserving Spotify's
+ * original relevance order among what's left.
+ */
+function cleanUpResults(items: RawSpotifyTrack[], query: string): RawSpotifyTrack[] {
+  const queryAskedForVariant = NOISE_PATTERN.test(query);
+  const seen = new Set<string>();
+  const clean: RawSpotifyTrack[] = [];
+  const noisy: RawSpotifyTrack[] = [];
+
+  for (const item of items) {
+    const artist = item.artists[0]?.name ?? '';
+    const key = normalizeKey(item.name, artist);
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    if (!queryAskedForVariant && NOISE_PATTERN.test(item.name)) {
+      noisy.push(item);
+    } else {
+      clean.push(item);
+    }
+  }
+
+  // Prefer clean matches, but fall back to noisy ones rather than returning
+  // fewer than we could — a remix is still better than an empty slot.
+  return [...clean, ...noisy].slice(0, RESULTS_RETURNED);
+}
+
 // ── Input validation ───────────────────────────────────────────────────────────
 
 // Reject/truncate absurdly long queries before they ever hit the Spotify API.
@@ -125,7 +178,9 @@ export async function searchSpotify(query: string): Promise<SpotifyTrack[]> {
   const url = new URL('https://api.spotify.com/v1/search');
   url.searchParams.set('q', trimmed);
   url.searchParams.set('type', 'track');
-  url.searchParams.set('limit', '5');
+  // Over-fetch beyond what we show — cleanUpResults trims noise/duplicates
+  // out of this larger pool before we hand back RESULTS_RETURNED tracks.
+  url.searchParams.set('limit', String(SEARCH_FETCH_LIMIT));
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
@@ -139,7 +194,8 @@ export async function searchSpotify(query: string): Promise<SpotifyTrack[]> {
   }
 
   const data = await res.json();
-  const items: RawSpotifyTrack[] = data.tracks?.items ?? [];
+  const rawItems: RawSpotifyTrack[] = data.tracks?.items ?? [];
+  const items = cleanUpResults(rawItems, trimmed);
 
   return items.map((item) => ({
     id:       item.id,
