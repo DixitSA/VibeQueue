@@ -111,7 +111,7 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
                 <span className="text-cream/20 font-display text-xs font-bold mt-1 group-hover:text-emerald transition-colors">{item.step}</span>
                 <div className="space-y-1">
                   <p className="text-cream/80 font-display text-sm font-bold uppercase tracking-wide">{item.title}</p>
-                  <p className="text-cream/30 text-xs leading-relaxed">{item.desc}</p>
+                  <p className="text-cream/60 text-xs leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -120,7 +120,7 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
           <div className="pt-6 border-t border-cream/5">
              <div className="flex items-center gap-3 px-4 py-3 bg-cream/5 rounded-sm border border-cream/10">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
-                <span className="text-[10px] uppercase tracking-widest text-cream/40 font-bold">Bridge Disconnected</span>
+                <span className="text-[10px] uppercase tracking-widest text-cream/60 font-bold">Bridge Disconnected</span>
              </div>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
                 <span className="text-emerald font-display text-xs font-bold mt-1 group-hover:scale-110 transition-transform">{item.step}</span>
                 <div className="space-y-1">
                   <p className="text-cream/80 font-display text-sm font-bold uppercase tracking-wide">{item.title}</p>
-                  <p className="text-cream/30 text-xs leading-relaxed">{item.desc}</p>
+                  <p className="text-cream/60 text-xs leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -157,7 +157,7 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
           <div className="pt-6 border-t border-cream/5">
              <div className="flex items-center gap-3 px-4 py-3 bg-cream/5 rounded-sm border border-cream/10">
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                <span className="text-[10px] uppercase tracking-widest text-cream/40 font-bold">Waiting for Signal...</span>
+                <span className="text-[10px] uppercase tracking-widest text-cream/60 font-bold">Waiting for Signal...</span>
              </div>
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
 
       {/* Album art — more subtle when billboard is active */}
       <div className="relative aspect-square w-full max-w-[200px] flex-shrink-0 group">
-        <div className={`absolute inset-0 rounded-sm overflow-hidden border border-cream/10 transition-all duration-700 group-hover:scale-105 ${nowPlaying.isPlaying ? 'shadow-[0_20px_50px_rgba(16,185,129,0.15)]' : ''}`}>
+        <div className={`absolute inset-0 rounded-sm overflow-hidden border border-cream/10 transition-all duration-700 group-hover:scale-105 ${nowPlaying.isPlaying ? 'shadow-emerald-glow-lg' : ''}`}>
           {nowPlaying.albumArt ? (
             <Image
               src={nowPlaying.albumArt}
@@ -211,9 +211,11 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
       {/* Progress */}
       <div className="flex flex-col gap-3 mt-auto">
         <div className="h-[2px] w-full bg-cream/5 rounded-full overflow-hidden">
+          {/* transform (not width) so the tick doesn't force a layout
+              recalculation every second — only a GPU composite. */}
           <div
-            className="h-full bg-emerald transition-all duration-1000 ease-linear rounded-full shadow-[0_0_12px_rgba(16,185,129,0.6)]"
-            style={{ width: `${progressPct}%` }}
+            className="h-full w-full bg-emerald origin-left transition-transform duration-1000 ease-linear rounded-full shadow-emerald-glow-md"
+            style={{ transform: `scaleX(${progressPct / 100})` }}
           />
         </div>
         <div className="flex justify-between">

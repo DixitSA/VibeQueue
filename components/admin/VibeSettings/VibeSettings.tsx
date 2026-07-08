@@ -20,7 +20,7 @@ function Tag({ label, onRemove, color }: { label: string; onRemove: () => void; 
   return (
     <span
       className={`
-        inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-display font-bold uppercase tracking-wider
+        inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full text-xs font-display font-bold uppercase tracking-wider
         ${color === 'red'
           ? 'bg-red-900/20 border border-red-500/20 text-red-400/80'
           : 'bg-emerald/10 border border-emerald/20 text-emerald/80'
@@ -28,10 +28,13 @@ function Tag({ label, onRemove, color }: { label: string; onRemove: () => void; 
       `}
     >
       {label}
+      {/* min 44x44px hit area (padding extends past the visible icon) so
+          removing a tag doesn't require pixel-precise taps on a touchscreen
+          admin device — the icon itself stays small to fit the pill. */}
       <button
         onClick={onRemove}
         aria-label={`Remove ${label}`}
-        className="opacity-50 hover:opacity-100 transition-opacity"
+        className="p-2.5 -m-1 opacity-50 hover:opacity-100 transition-opacity"
       >
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -139,9 +142,9 @@ export default function VibeSettings({ venueId, settings }: VibeSettingsProps) {
   return (
     <div className="bg-cream/5 border border-cream/10 rounded-sm p-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <p className="text-[9px] uppercase tracking-[0.35em] text-cream/30 font-bold font-display">
+        <h3 className="text-[9px] uppercase tracking-[0.35em] text-cream/60 font-bold font-display">
           Vibe Filter
-        </p>
+        </h3>
         {isSaving && (
           <svg className="w-3.5 h-3.5 text-cream/20 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />

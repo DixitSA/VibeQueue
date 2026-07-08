@@ -92,7 +92,7 @@ function SearchResultCard({
           flex-shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center
           transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
           ${added
-            ? 'bg-emerald border-emerald text-white scale-110 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+            ? 'bg-emerald border-emerald text-white scale-110 shadow-emerald-glow-md'
             : isAdding
               ? 'border-charcoal/10 text-charcoal/10 cursor-wait'
               : 'bg-transparent border-charcoal/10 text-charcoal/30 hover:border-charcoal hover:text-charcoal active:scale-90 active:bg-charcoal/5'
@@ -318,18 +318,18 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid, manualApp
 
             <div className="mt-12 p-6 bg-charcoal/5 rounded-sm border border-charcoal/[0.03]">
               <p className="text-charcoal/40 text-xs leading-relaxed font-sans italic">
-                &ldquo;Music is the shorthand of emotion.&rdquo; &mdash; Leo Tolstoy
+                &ldquo;Music is the shorthand of emotion.&rdquo; (Leo Tolstoy)
               </p>
             </div>
           </div>
         )}
 
         {showNoMatch && (
-          <div className="flex flex-col items-center justify-center h-64 gap-3 animate-in fade-in duration-500">
-            <p className="text-charcoal/40 font-display text-sm uppercase tracking-[0.2em] font-bold">
+          <div className="flex flex-col items-center justify-center h-64 gap-3 animate-in fade-in duration-500" role="status">
+            <p className="text-charcoal/60 font-display text-sm uppercase tracking-[0.2em] font-bold">
               No results found
             </p>
-            <p className="text-charcoal/20 font-sans text-xs text-center max-w-[200px]">
+            <p className="text-charcoal/60 font-sans text-xs text-center max-w-[200px]">
               We couldn&rsquo;t find any matches. Check your spelling or try another vibe.
             </p>
           </div>
