@@ -4,6 +4,15 @@
       "collectionGroup": "queued_songs",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "upvoteCount", "order": "DESCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "queued_songs",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "upvoteCount", "order": "DESCENDING" },
         { "fieldPath": "timestamp", "order": "ASCENDING" }
       ]

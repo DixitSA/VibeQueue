@@ -13,6 +13,9 @@ interface QueueCardProps {
   artistName: string;
   albumArt: string;
   upvotes: number;
+  voters: string[];
+  /** Anonymous UID from useAuth — null while auth is still resolving */
+  uid: string | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -24,9 +27,17 @@ export default function QueueCard({
   artistName,
   albumArt,
   upvotes,
+  voters,
+  uid,
 }: QueueCardProps) {
   const [isFlipped, setIsFlipped]               = useState(false);
-  const [isUpvoted, setIsUpvoted]               = useState(false);
+  // Tracks an upvote made *this session*, before the Firestore snapshot round-trips.
+  // `uid` resolves asynchronously (anonymous auth), so deriving isUpvoted from
+  // `voters` on every render (rather than only once via useState's initializer)
+  // ensures a returning patron's prior vote is picked up as soon as uid/voters
+  // become available — no effect-based re-sync needed.
+  const [optimisticVote, setOptimisticVote]     = useState(false);
+  const isUpvoted = optimisticVote || voters.includes(uid ?? '');
   const [optimisticUpvotes, setOptimisticUpvotes] = useState(upvotes);
   const [isJumping, setIsJumping]               = useState(false);
   const [isPopping, setIsPopping]               = useState(false);
@@ -41,21 +52,21 @@ export default function QueueCard({
   // On network failure, roll back both the count and the upvoted state.
 
   const triggerUpvote = async () => {
-    if (isUpvoted) return;
+    if (isUpvoted || !uid) return;
 
     // 1. Optimistic update
-    setIsUpvoted(true);
+    setOptimisticVote(true);
     setOptimisticUpvotes((prev) => prev + 1);
     setIsJumping(true);
     setTimeout(() => setIsJumping(false), 400);
 
     // 2. Persist to Firestore
     try {
-      await incrementUpvote(venueId, id);
+      await incrementUpvote(venueId, id, uid);
     } catch (err) {
       // 3. Rollback on failure
       console.error('[VibeQueue] Upvote write failed — rolling back:', err);
-      setIsUpvoted(false);
+      setOptimisticVote(false);
       setOptimisticUpvotes((prev) => prev - 1);
     }
   };
@@ -80,7 +91,7 @@ export default function QueueCard({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isSwiping || isUpvoted || isFlipped) return;
+    if (!isSwiping || isUpvoted || isFlipped || !uid) return;
     const diff = e.touches[0].clientX - startX;
     if (diff > 0) setSwipeOffset(Math.min(diff, 120));
   };
@@ -88,7 +99,7 @@ export default function QueueCard({
   const handleTouchEnd = () => {
     if (!isSwiping) return;
     setIsSwiping(false);
-    if (swipeOffset > 60 && !isUpvoted) triggerUpvote();
+    if (swipeOffset > 60 && !isUpvoted && uid) triggerUpvote();
     setSwipeOffset(0);
   };
 
@@ -197,14 +208,16 @@ export default function QueueCard({
           </div>
 
           <button
-            disabled={isUpvoted}
+            disabled={isUpvoted || !uid}
             onClick={handleUpvote}
             className={`
               px-6 py-2 rounded-full font-display font-bold text-xs uppercase tracking-widest
               transition-all duration-300
               ${isUpvoted
                 ? 'bg-emerald text-charcoal opacity-80'
-                : 'bg-cream text-charcoal hover:bg-white'
+                : !uid
+                  ? 'bg-cream/40 text-charcoal/40 cursor-not-allowed'
+                  : 'bg-cream text-charcoal hover:bg-white'
               }
               ${isPopping ? 'animate-haptic-pop' : ''}
             `}

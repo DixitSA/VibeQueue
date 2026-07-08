@@ -14,15 +14,15 @@ interface SearchOverlayProps {
   venueId: string;
   /** Anonymous UID from useAuth — null while auth is still resolving */
   uid: string | null;
+  /** When true, newly requested songs land as 'pending' and need admin approval */
+  manualApprovalMode: boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TRENDING_TRACKS: SpotifyTrack[] = [
-  { id: '1', title: 'Midnight City', artist: 'M83', albumArt: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop' },
-  { id: '2', title: 'Starboy', artist: 'The Weeknd', albumArt: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200&auto=format&fit=crop' },
-  { id: '3', title: 'Blinding Lights', artist: 'The Weeknd', albumArt: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200&auto=format&fit=crop' },
-];
+// Fixed seed query used to populate "Trending" with real, playable Spotify
+// tracks — replaces the old hardcoded fake-ID / Unsplash-photo mock.
+const TRENDING_SEED_QUERY = 'top hits';
 
 // ─── SearchResultCard ─────────────────────────────────────────────────────────
 
@@ -121,12 +121,29 @@ function SearchResultCard({
 
 // ─── SearchOverlay ────────────────────────────────────────────────────────────
 
-export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchOverlayProps) {
+export default function SearchOverlay({ isOpen, onClose, venueId, uid, manualApprovalMode }: SearchOverlayProps) {
   const [query, setQuery]       = useState('');
   const [results, setResults]   = useState<SpotifyTrack[]>([]);
+  const [trending, setTrending] = useState<SpotifyTrack[]>([]);
   const [mounted, setMounted]   = useState(false);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // ── Trending tracks — real Spotify search results, fetched once on mount ──
+
+  useEffect(() => {
+    let cancelled = false;
+    searchSpotify(TRENDING_SEED_QUERY)
+      .then((tracks) => {
+        if (!cancelled) setTrending(tracks);
+      })
+      .catch((err) => {
+        console.error('[VibeQueue] Failed to load trending tracks:', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ── Swipe-to-dismiss ─────────────────────────────────────────────────────
   const [dragOffset, setDragOffset] = useState(0);
@@ -194,7 +211,7 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
 
   const handleAddTrack = async (track: SpotifyTrack) => {
     if (!uid) return;
-    await requestSong(venueId, track, uid);
+    await requestSong(venueId, track, uid, manualApprovalMode ? 'pending' : 'approved');
   };
 
   if (!mounted && !isOpen) return null;
@@ -289,19 +306,19 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
               Trending at Demo Taproom
             </p>
             <div className="space-y-1">
-              {TRENDING_TRACKS.map((track, i) => (
-                <SearchResultCard 
-                  key={track.id} 
-                  track={track} 
-                  onAdd={handleAddTrack} 
+              {trending.map((track, i) => (
+                <SearchResultCard
+                  key={track.id}
+                  track={track}
+                  onAdd={handleAddTrack}
                   index={i}
                 />
               ))}
             </div>
-            
+
             <div className="mt-12 p-6 bg-charcoal/5 rounded-sm border border-charcoal/[0.03]">
               <p className="text-charcoal/40 text-xs leading-relaxed font-sans italic">
-                "Music is the shorthand of emotion." — Leo Tolstoy
+                &ldquo;Music is the shorthand of emotion.&rdquo; &mdash; Leo Tolstoy
               </p>
             </div>
           </div>
@@ -313,7 +330,7 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid }: SearchO
               No results found
             </p>
             <p className="text-charcoal/20 font-sans text-xs text-center max-w-[200px]">
-              We couldn't find any matches. Check your spelling or try another vibe.
+              We couldn&rsquo;t find any matches. Check your spelling or try another vibe.
             </p>
           </div>
         )}

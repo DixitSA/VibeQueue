@@ -9,11 +9,13 @@ import { useQueue } from '@/hooks/useQueue';
 
 interface QueueListProps {
   venueId: string;
+  /** Anonymous UID from useAuth — null while auth is still resolving */
+  uid: string | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function QueueList({ venueId }: QueueListProps) {
+export default function QueueList({ venueId, uid }: QueueListProps) {
   const { songs, loading, error } = useQueue(venueId);
 
   // ── Error state ─────────────────────────────────────────────────────────────
@@ -69,6 +71,8 @@ export default function QueueList({ venueId }: QueueListProps) {
                 artistName={song.artist}
                 albumArt={song.albumArt}
                 upvotes={song.upvoteCount}
+                voters={song.voters}
+                uid={uid}
               />
             ))}
           </div>

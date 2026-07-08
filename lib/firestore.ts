@@ -4,8 +4,8 @@
 
 import {
   addDoc,
+  arrayUnion,
   collection,
-  deleteDoc,
   doc,
   increment,
   serverTimestamp,
@@ -36,23 +36,26 @@ export async function requestSong(
     timestamp:      serverTimestamp(),
     requestedBy:    uid,
     status,
+    voters:         [uid],
   });
 }
 
 // ── Increment upvote ──────────────────────────────────────────────────────────
 
 /**
- * Atomically increments `upvoteCount` by 1.
+ * Atomically increments `upvoteCount` by 1 and records `uid` as a voter.
  * The UI applies an optimistic +1 before this resolves; on failure the caller
- * rolls back local state.
+ * rolls back local state. Firestore rules reject a second vote from the same
+ * uid (`!(uid in resource.data.voters)`).
  */
 export async function incrementUpvote(
   venueId: string,
   songId: string,
+  uid: string,
 ): Promise<void> {
   await updateDoc(
     doc(db, `venue_queues/${venueId}/queued_songs`, songId),
-    { upvoteCount: increment(1) },
+    { upvoteCount: increment(1), voters: arrayUnion(uid) },
   );
 }
 

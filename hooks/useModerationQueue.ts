@@ -52,6 +52,7 @@ export function useModerationQueue(venueId: string): UseModerationQueueReturn {
             timestamp:      data.timestamp?.toDate() ?? null,
             requestedBy:    data.requestedBy     ?? '',
             status:         data.status          ?? 'approved',
+            voters:         data.voters           ?? [],
           };
         });
         setAll(songs);
