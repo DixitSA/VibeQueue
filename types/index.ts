@@ -22,6 +22,8 @@ export interface QueuedSong {
   requestedBy: string;
   /** Defaults to 'approved'; set to 'pending' when manual approval is on */
   status: SongStatus;
+  /** UIDs of patrons who have upvoted — enforces one vote per user */
+  voters: string[];
 }
 
 /** A track returned by the Spotify Search API. */

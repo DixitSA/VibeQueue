@@ -28,17 +28,33 @@ service cloud.firestore {
       match /queued_songs/{songId} {
         // Anyone can see the queue
         allow read: if true;
-        
+
         // Any authenticated user can request a song
-        allow create: if request.auth != null 
+        allow create: if request.auth != null
                       && request.resource.data.upvoteCount == 1
-                      && request.resource.data.requestedBy == request.auth.uid;
-        
-        // Any authenticated user can upvote
-        // Note: In a production app, you'd want to prevent multiple upvotes 
-        // from the same user via a subcollection or array check.
+                      && request.resource.data.requestedBy == request.auth.uid
+                      && request.resource.data.status in ['pending', 'approved']
+                      && request.resource.data.voters == [request.auth.uid]
+                      && request.resource.data.title.size() < 200
+                      && request.resource.data.artist.size() < 200;
+
+        // Any authenticated user can upvote — exactly once per user.
+        // Every field other than upvoteCount/voters must stay pinned to its
+        // current value, so a patron can't sneak a status change (moderation
+        // bypass) into the same write as their upvote.
+        // `resource.data.get('voters', [])` tolerates documents written before
+        // this field existed, so pre-migration songs aren't permanently locked
+        // out of upvoting.
         allow update: if request.auth != null
-                      && request.resource.data.upvoteCount == resource.data.upvoteCount + 1;
+                      && !(request.auth.uid in resource.data.get('voters', []))
+                      && request.resource.data.upvoteCount == resource.data.upvoteCount + 1
+                      && request.resource.data.voters == resource.data.get('voters', []).concat([request.auth.uid])
+                      && request.resource.data.title == resource.data.title
+                      && request.resource.data.artist == resource.data.artist
+                      && request.resource.data.albumArt == resource.data.albumArt
+                      && request.resource.data.requestedBy == resource.data.requestedBy
+                      && request.resource.data.status == resource.data.status
+                      && request.resource.data.spotifyTrackId == resource.data.spotifyTrackId;
       }
     }
   }

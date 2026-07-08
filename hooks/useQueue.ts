@@ -4,11 +4,10 @@
 // Opens an `onSnapshot` subscription to a venue's queued_songs collection.
 // Results are sorted: highest upvoteCount first, then earliest timestamp.
 //
-// ⚠️  Firestore requires a composite index for multi-field orderBy.
-//     Create the index at:
-//     Firebase Console → Firestore → Indexes → Add composite index
+// ⚠️  Firestore requires a composite index for this equality + multi-field
+//     orderBy query. See firestore.indexes.json:
 //       Collection: queued_songs
-//       Fields:     upvoteCount DESC, timestamp ASC
+//       Fields:     status ASC, upvoteCount DESC, timestamp ASC
 
 import { useEffect, useState } from 'react';
 import {
@@ -16,6 +15,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  where,
   type FirestoreError,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -37,6 +37,7 @@ export function useQueue(venueId: string): UseQueueReturn {
 
     const q = query(
       collection(db, `venue_queues/${venueId}/queued_songs`),
+      where('status', '==', 'approved'),
       orderBy('upvoteCount', 'desc'),
       orderBy('timestamp', 'asc'),
     );
@@ -56,6 +57,8 @@ export function useQueue(venueId: string): UseQueueReturn {
             // serverTimestamp() resolves asynchronously — guard for null
             timestamp:      data.timestamp?.toDate() ?? null,
             requestedBy:    data.requestedBy     ?? '',
+            status:         data.status ?? 'approved',
+            voters:         data.voters ?? [],
           };
         });
 

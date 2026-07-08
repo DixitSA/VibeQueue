@@ -2,6 +2,7 @@
 
 import React, { use, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useVenueSettings } from '@/hooks/useVenueSettings';
 import CurrentlyPlaying from '@/components/CurrentlyPlaying/CurrentlyPlaying';
 import QueueList from '@/components/QueueList/QueueList';
 import SearchFAB from '@/components/SearchFAB/SearchFAB';
@@ -21,14 +22,15 @@ export default function SessionPage({
   // Anonymous auth — uid is null for the first ~100 ms while Firebase resolves.
   // SearchOverlay guards against null uid before writing to Firestore.
   const { user } = useAuth();
+  const { settings } = useVenueSettings(sessionId);
 
   return (
     <AppContainer>
       <main className="flex-1 flex flex-col relative min-h-full">
-        <CurrentlyPlaying />
+        <CurrentlyPlaying venueId={sessionId} />
 
         <div className="flex-1">
-          <QueueList venueId={sessionId} />
+          <QueueList venueId={sessionId} uid={user?.uid ?? null} />
         </div>
 
         <SearchFAB onClick={() => setIsSearchOpen(true)} />
@@ -38,6 +40,7 @@ export default function SessionPage({
           onClose={() => setIsSearchOpen(false)}
           venueId={sessionId}
           uid={user?.uid ?? null}
+          manualApprovalMode={settings.manualApprovalMode}
         />
 
         <footer className="py-12 text-center">
