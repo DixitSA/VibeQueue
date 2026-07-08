@@ -174,10 +174,7 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid, manualApp
   // ── Debounced Spotify search ─────────────────────────────────────────────
 
   useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
+    if (query.trim().length < 2) return;
 
     const timer = setTimeout(() => {
       startTransition(async () => {
@@ -193,6 +190,7 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid, manualApp
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: must mount synchronously when opening (only the close path needs the setTimeout delay, for the exit transition)
       setMounted(true);
       document.body.style.overflow = 'hidden';
       setTimeout(() => inputRef.current?.focus(), 80);
@@ -218,9 +216,11 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid, manualApp
 
   // ── Render ───────────────────────────────────────────────────────────────
 
+  const effectiveResults = query.trim().length < 2 ? [] : results;
+
   const showOnboarding = query.trim().length < 1;
-  const showNoMatch    = query.trim().length >= 2 && !isPending && results.length === 0;
-  const showResults    = results.length > 0;
+  const showNoMatch    = query.trim().length >= 2 && !isPending && effectiveResults.length === 0;
+  const showResults    = effectiveResults.length > 0;
 
   return (
     <div
@@ -341,7 +341,7 @@ export default function SearchOverlay({ isOpen, onClose, venueId, uid, manualApp
               Spotify Global Results
             </p>
             <div className="space-y-1">
-              {results.map((track, i) => (
+              {effectiveResults.map((track, i) => (
                 <SearchResultCard
                   key={track.id}
                   track={track}
