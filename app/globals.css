@@ -79,9 +79,14 @@
       0 8px 8px rgba(0,0,0,0.1);
   }
 
+  /* Callers pair this with a static `opacity-0` class so the element starts
+     invisible before the animation takes over — the keyframe must carry the
+     element to opacity:1, otherwise it stays permanently invisible once the
+     animation finishes (animation-fill-mode: forwards freezes on the `to`
+     state, and `to` had no opacity of its own to override the static class). */
   @keyframes slide-up {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .animate-slide-up {
