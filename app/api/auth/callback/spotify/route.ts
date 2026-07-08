@@ -6,18 +6,47 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
-export async function GET(request: Request): Promise<NextResponse | Response> {
+// Builds a redirect response to /admin and always clears the one-time-use
+// state cookie, whether this request succeeded or failed.
+function redirectAndClearState(origin: string, query: string): NextResponse {
+  const response = NextResponse.redirect(`${origin}/admin${query}`);
+  response.cookies.delete('spotify_oauth_state');
+  return response;
+}
+
+export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
   console.log('[VibeQueue] Callback route hit:', request.url);
 
+  // CSRF protection: the `state` query param must exactly match the value we
+  // stashed in the httpOnly cookie when the flow started. Reject (without
+  // ever calling Spotify's token endpoint) if it's missing or mismatched.
+  const stateParam  = searchParams.get('state');
+  const cookieHeader = request.headers.get('cookie');
+  const cookieMatch  = cookieHeader?.match(/(?:^|;\s*)spotify_oauth_state=([^;]*)/);
+  const cookieState  = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+
+  if (!stateParam || !cookieState || stateParam !== cookieState) {
+    console.warn('[VibeQueue] Spotify OAuth state mismatch or missing cookie.');
+    return redirectAndClearState(origin, '?error=invalid_state');
+  }
+
+  let venueId: string;
   try {
-    const code    = searchParams.get('code');
-    const venueId = searchParams.get('state') ?? (process.env.NEXT_PUBLIC_ADMIN_VENUE_ID ?? 'CHARLOTTE_TEST');
-    const error   = searchParams.get('error');
+    const decoded = JSON.parse(Buffer.from(stateParam, 'base64url').toString('utf8'));
+    venueId = decoded?.venueId ?? (process.env.NEXT_PUBLIC_ADMIN_VENUE_ID ?? 'CHARLOTTE_TEST');
+  } catch (decodeErr) {
+    console.warn('[VibeQueue] Failed to decode Spotify OAuth state:', decodeErr);
+    return redirectAndClearState(origin, '?error=invalid_state');
+  }
+
+  try {
+    const code  = searchParams.get('code');
+    const error = searchParams.get('error');
 
     if (error || !code) {
       console.warn('[VibeQueue] Auth denied or missing code:', error);
-      return NextResponse.redirect(`${origin}/admin?error=spotify_denied`);
+      return redirectAndClearState(origin, '?error=spotify_denied');
     }
 
     const clientId     = process.env.SPOTIFY_CLIENT_ID;
@@ -26,7 +55,7 @@ export async function GET(request: Request): Promise<NextResponse | Response> {
 
     if (!clientId || !clientSecret || !redirectUri) {
       console.error('[VibeQueue] Missing Spotify configuration');
-      return NextResponse.redirect(`${origin}/admin?error=missing_credentials`);
+      return redirectAndClearState(origin, '?error=missing_credentials');
     }
 
     console.log('[VibeQueue] Exchanging code for tokens...');
@@ -48,7 +77,7 @@ export async function GET(request: Request): Promise<NextResponse | Response> {
 
     if (!tokenData.access_token) {
       console.error('[VibeQueue] Token exchange failed:', tokenData);
-      return NextResponse.redirect(`${origin}/admin?error=token_exchange_failed`);
+      return redirectAndClearState(origin, '?error=token_exchange_failed');
     }
 
     console.log(`[VibeQueue] Persisting tokens for venue: ${venueId}`);
@@ -66,17 +95,10 @@ export async function GET(request: Request): Promise<NextResponse | Response> {
     }, { merge: true });
 
     console.log('[VibeQueue] Success! Redirecting to admin...');
-    return NextResponse.redirect(`${origin}/admin?connected=true`);
+    return redirectAndClearState(origin, '?connected=true');
 
-  } catch (fatalErr: any) {
+  } catch (fatalErr: unknown) {
     console.error('[VibeQueue] FATAL Callback Error:', fatalErr);
-    return new Response(JSON.stringify({ 
-      error: 'fatal_callback_error', 
-      message: fatalErr.message,
-      stack: fatalErr.stack 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return redirectAndClearState(origin, '?error=callback_failed');
   }
 }
