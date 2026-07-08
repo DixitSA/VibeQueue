@@ -1,7 +1,15 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // Admin allowlist — maps a signed-in Firebase Auth uid to the venues
+    // they are authorized to manage. Written only via the Admin SDK
+    // (see scripts/create-admin.mjs); never writable from the client.
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false; // managed only via Admin SDK / scripts/create-admin.mjs
+    }
+
     // Venue Settings (public config)
     match /venue_settings/{venueId} {
       allow read: if true;

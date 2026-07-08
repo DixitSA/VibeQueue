@@ -7,6 +7,7 @@
 import React, { useEffect, useState, useTransition } from 'react';
 import { getDevices, transferPlayback } from '@/lib/spotifyAdmin';
 import { updateVenueSettings } from '@/lib/venueActions';
+import { getAdminIdToken } from '@/lib/firebase';
 import type { SpotifyDevice, VenueSettings } from '@/types';
 
 interface ConnectionCardProps {
@@ -23,7 +24,8 @@ export default function ConnectionCard({ venueId, settings }: ConnectionCardProp
     if (!settings.spotifyConnected) return;
     startTransition(async () => {
       try {
-        const list = await getDevices(venueId);
+        const idToken = await getAdminIdToken();
+        const list = await getDevices(idToken, venueId);
         setDevices(list);
       } catch {
         // Token may not be valid yet — silently ignore, user can refresh
@@ -33,15 +35,28 @@ export default function ConnectionCard({ venueId, settings }: ConnectionCardProp
 
   const handleDeviceSelect = async (deviceId: string) => {
     startTransition(async () => {
-      await transferPlayback(venueId, deviceId);
-      await updateVenueSettings(venueId, { activeDeviceId: deviceId });
+      try {
+        const idToken = await getAdminIdToken();
+        // Independent writes — run in parallel rather than serially.
+        await Promise.all([
+          transferPlayback(idToken, venueId, deviceId),
+          updateVenueSettings(idToken, venueId, { activeDeviceId: deviceId }),
+        ]);
+      } catch (e) {
+        console.error('[VibeQueue] Failed to select device:', e);
+      }
     });
   };
 
   const handleRefreshDevices = () => {
     startTransition(async () => {
-      const list = await getDevices(venueId);
-      setDevices(list);
+      try {
+        const idToken = await getAdminIdToken();
+        const list = await getDevices(idToken, venueId);
+        setDevices(list);
+      } catch (e) {
+        console.error('[VibeQueue] Failed to refresh devices:', e);
+      }
     });
   };
 
