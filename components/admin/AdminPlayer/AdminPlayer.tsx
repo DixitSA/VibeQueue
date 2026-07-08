@@ -5,8 +5,10 @@
 // Polls getNowPlaying every 5 s and shows the current track with a Master Skip.
 
 import React, { useCallback, useEffect, useState, useTransition } from 'react';
+import Image from 'next/image';
 import AlbumArt from '@/components/AlbumArt/AlbumArt';
 import { getNowPlaying, skipTrack } from '@/lib/spotifyAdmin';
+import { getAdminIdToken } from '@/lib/firebase';
 import type { NowPlaying } from '@/types';
 
 interface AdminPlayerProps {
@@ -74,9 +76,14 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
 
   const handleSkip = () => {
     startTransition(async () => {
-      await skipTrack(venueId);
-      // Re-fetch after a short delay to let Spotify update
-      setTimeout(fetchNowPlaying, 800);
+      try {
+        const idToken = await getAdminIdToken();
+        await skipTrack(idToken, venueId);
+        // Re-fetch after a short delay to let Spotify update
+        setTimeout(fetchNowPlaying, 800);
+      } catch (e) {
+        console.error('[VibeQueue] Skip failed:', e);
+      }
     });
   };
 
@@ -186,10 +193,12 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
       <div className="relative aspect-square w-full max-w-[200px] flex-shrink-0 group">
         <div className={`absolute inset-0 rounded-sm overflow-hidden border border-cream/10 transition-all duration-700 group-hover:scale-105 ${nowPlaying.isPlaying ? 'shadow-[0_20px_50px_rgba(16,185,129,0.15)]' : ''}`}>
           {nowPlaying.albumArt ? (
-            <img
+            <Image
               src={nowPlaying.albumArt}
               alt={nowPlaying.trackName}
-              className="w-full h-full object-cover"
+              fill
+              sizes="200px"
+              className="object-cover"
             />
           ) : (
             <div className="w-full h-full bg-cream/5 flex items-center justify-center">

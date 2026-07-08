@@ -4,16 +4,19 @@
 // Server-side Firestore operations using the Admin SDK.
 
 import { adminDb } from '@/lib/firebaseAdmin';
+import { requireAdmin } from '@/lib/adminAuth';
 import type { VenueSettings } from '@/types';
 
 /**
  * Merges partial updates into venue_settings/{venueId}.
- * This is a Server Action.
+ * This is a Server Action. Admin only.
  */
 export async function updateVenueSettings(
+  idToken: string,
   venueId: string,
   updates: Partial<Omit<VenueSettings, 'spotifyAccessToken' | 'spotifyRefreshToken' | 'tokenExpiresAt'>>,
 ): Promise<void> {
+  await requireAdmin(idToken, venueId);
   await adminDb.collection('venue_settings').doc(venueId).set(updates, { merge: true });
 }
 
@@ -22,9 +25,11 @@ export async function updateVenueSettings(
  * Admin only.
  */
 export async function deleteSong(
+  idToken: string,
   venueId: string,
   songId: string,
 ): Promise<void> {
+  await requireAdmin(idToken, venueId);
   await adminDb
     .collection('venue_queues')
     .doc(venueId)
@@ -35,12 +40,15 @@ export async function deleteSong(
 
 /**
  * Updates a song's moderation status (pending -> approved).
+ * Admin only.
  */
 export async function updateSongStatus(
+  idToken: string,
   venueId: string,
   songId: string,
   status: string,
 ): Promise<void> {
+  await requireAdmin(idToken, venueId);
   await adminDb
     .collection('venue_queues')
     .doc(venueId)

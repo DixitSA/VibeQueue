@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { updateVenueSettings } from '@/lib/venueActions';
+import { getAdminIdToken } from '@/lib/firebase';
 
 interface ApprovalToggleProps {
   venueId:            string;
@@ -17,7 +18,8 @@ export default function ApprovalToggle({ venueId, manualApprovalMode }: Approval
   const handleToggle = async () => {
     setIsSaving(true);
     try {
-      await updateVenueSettings(venueId, { manualApprovalMode: !manualApprovalMode });
+      const idToken = await getAdminIdToken();
+      await updateVenueSettings(idToken, venueId, { manualApprovalMode: !manualApprovalMode });
     } catch (e) {
       console.error('[VibeQueue] Failed to update approval mode:', e);
     } finally {

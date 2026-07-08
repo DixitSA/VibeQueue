@@ -5,6 +5,7 @@
 // Reads/writes venue_secrets/{venueId} for token management (Admin SDK).
 
 import { adminDb } from './firebaseAdmin';
+import { requireAdmin } from '@/lib/adminAuth';
 import type { SpotifyDevice, NowPlaying } from '@/types';
 
 // ── Internal: token management ────────────────────────────────────────────────
@@ -33,7 +34,10 @@ async function getAccessToken(venueId: string): Promise<string> {
   if (!data.spotifyAccessToken) throw new Error('[VibeQueue] Spotify not connected.');
 
   // Use cached token if it has > 60 s remaining
-  const expiresAt: number = data.tokenExpiresAt?.toDate?.()?.getTime() ?? data.tokenExpiresAt?._seconds * 1000 ?? 0;
+  const expiresAt: number =
+    data.tokenExpiresAt?.toDate?.()?.getTime() ??
+    (data.tokenExpiresAt?._seconds != null ? data.tokenExpiresAt._seconds * 1000 : undefined) ??
+    0;
   if (Date.now() < expiresAt - 60_000) return data.spotifyAccessToken as string;
 
   // Refresh
@@ -73,8 +77,9 @@ async function refreshAccessToken(venueId: string, refreshToken: string): Promis
 
 // ── Public server actions ─────────────────────────────────────────────────────
 
-/** Returns all available Spotify Connect devices for the venue's account. */
-export async function getDevices(venueId: string): Promise<SpotifyDevice[]> {
+/** Returns all available Spotify Connect devices for the venue's account. Admin only. */
+export async function getDevices(idToken: string, venueId: string): Promise<SpotifyDevice[]> {
+  await requireAdmin(idToken, venueId);
   const token = await getAccessToken(venueId);
   const res   = await fetch('https://api.spotify.com/v1/me/player/devices', {
     headers: { Authorization: `Bearer ${token}` },
@@ -114,8 +119,9 @@ export async function getNowPlaying(venueId: string): Promise<NowPlaying | null>
   };
 }
 
-/** Skips to the next track. */
-export async function skipTrack(venueId: string): Promise<void> {
+/** Skips to the next track. Admin only. */
+export async function skipTrack(idToken: string, venueId: string): Promise<void> {
+  await requireAdmin(idToken, venueId);
   const token = await getAccessToken(venueId);
   await fetch('https://api.spotify.com/v1/me/player/next', {
     method:  'POST',
@@ -123,8 +129,9 @@ export async function skipTrack(venueId: string): Promise<void> {
   });
 }
 
-/** Transfers playback to the specified device and starts playing. */
-export async function transferPlayback(venueId: string, deviceId: string): Promise<void> {
+/** Transfers playback to the specified device and starts playing. Admin only. */
+export async function transferPlayback(idToken: string, venueId: string, deviceId: string): Promise<void> {
+  await requireAdmin(idToken, venueId);
   const token = await getAccessToken(venueId);
   await fetch('https://api.spotify.com/v1/me/player', {
     method:  'PUT',

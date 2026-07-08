@@ -6,6 +6,7 @@
 
 import React, { useState, useRef, KeyboardEvent } from 'react';
 import { updateVenueSettings } from '@/lib/venueActions';
+import { getAdminIdToken } from '@/lib/firebase';
 import type { VenueSettings } from '@/types';
 
 interface VibeSettingsProps {
@@ -108,7 +109,8 @@ export default function VibeSettings({ venueId, settings }: VibeSettingsProps) {
   const save = async (updates: Partial<Pick<VenueSettings, 'forbiddenGenres' | 'vibeSeeds'>>) => {
     setIsSaving(true);
     try {
-      await updateVenueSettings(venueId, updates);
+      const idToken = await getAdminIdToken();
+      await updateVenueSettings(idToken, venueId, updates);
     } catch (e) {
       console.error('[VibeQueue] Failed to save vibe settings:', e);
     } finally {

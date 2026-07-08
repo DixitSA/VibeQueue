@@ -17,9 +17,10 @@ import AdminGuard       from '@/components/admin/AdminGuard/AdminGuard';
 import { useAdminShortcuts } from '@/hooks/useAdminShortcuts';
 import { skipTrack } from '@/lib/spotifyAdmin';
 import { updateVenueSettings } from '@/lib/venueActions';
+import { getAdminIdToken } from '@/lib/firebase';
 
 // Venue ID — driven by env var so the same codebase serves multiple venues.
-const VENUE_ID = process.env.NEXT_PUBLIC_ADMIN_VENUE_ID ?? 'CHARLOTTE_TEST';
+const VENUE_ID = process.env.NEXT_PUBLIC_ADMIN_VENUE_ID ?? 'demo-taproom';
 
 export default function AdminPage() {
   const { settings, loading } = useVenueSettings(VENUE_ID);
@@ -28,17 +29,23 @@ export default function AdminPage() {
   // Keyboard shortcuts
   useAdminShortcuts({
     onSkip: async () => {
-      try { await skipTrack(VENUE_ID); } catch (e) { console.error('Keyboard skip failed:', e); }
+      try {
+        const idToken = await getAdminIdToken();
+        await skipTrack(idToken, VENUE_ID);
+      } catch (e) { console.error('Keyboard skip failed:', e); }
     },
     onToggleApproval: async () => {
-      try { await updateVenueSettings(VENUE_ID, { manualApprovalMode: !settings.manualApprovalMode }); }
+      try {
+        const idToken = await getAdminIdToken();
+        await updateVenueSettings(idToken, VENUE_ID, { manualApprovalMode: !settings.manualApprovalMode });
+      }
       catch (e) { console.error('Keyboard approval toggle failed:', e); }
     },
     onSwitchTab: setActiveTab
   });
 
   return (
-    <AdminGuard>
+    <AdminGuard venueId={VENUE_ID}>
       <div className="h-screen bg-charcoal flex flex-col overflow-hidden select-none">
 
         {/* ── Header bar ──────────────────────────────────────────────────── */}

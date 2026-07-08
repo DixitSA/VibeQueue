@@ -21,3 +21,14 @@ const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseCon
 
 export const db: Firestore = getFirestore(app);
 export const auth: Auth    = getAuth(app);
+
+/**
+ * Returns a fresh Firebase ID token for the currently signed-in admin user.
+ * Client-only — used to authorize privileged Server Action calls.
+ * Throws if no user is signed in.
+ */
+export async function getAdminIdToken(): Promise<string> {
+  const u = auth.currentUser;
+  if (!u) throw new Error('Not signed in');
+  return u.getIdToken();
+}

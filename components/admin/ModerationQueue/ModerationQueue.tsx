@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import AlbumArt from '@/components/AlbumArt/AlbumArt';
 import { deleteSong, updateSongStatus } from '@/lib/venueActions';
+import { getAdminIdToken } from '@/lib/firebase';
 import { useModerationQueue } from '@/hooks/useModerationQueue';
 import type { QueuedSong } from '@/types';
 
@@ -33,19 +34,28 @@ function SongRow({
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    try { await deleteSong(venueId, song.id); }
+    try {
+      const idToken = await getAdminIdToken();
+      await deleteSong(idToken, venueId, song.id);
+    }
     catch (e) { console.error('[VibeQueue] Delete failed:', e); setIsDeleting(false); }
   };
 
   const handleApprove = async () => {
     setIsApproving(true);
-    try { await updateSongStatus(venueId, song.id, 'approved'); }
+    try {
+      const idToken = await getAdminIdToken();
+      await updateSongStatus(idToken, venueId, song.id, 'approved');
+    }
     catch (e) { console.error('[VibeQueue] Approve failed:', e); setIsApproving(false); }
   };
 
   const handleReject = async () => {
     setIsRejecting(true);
-    try { await deleteSong(venueId, song.id); }
+    try {
+      const idToken = await getAdminIdToken();
+      await deleteSong(idToken, venueId, song.id);
+    }
     catch (e) { console.error('[VibeQueue] Reject failed:', e); setIsRejecting(false); }
   };
 
