@@ -49,18 +49,18 @@ function VinylFallback({ size }: { size: NonNullable<AlbumArtProps['size']> }) {
   const s = SIZE[size];
   return (
     <div
-      className={`${s.wrapper} flex-shrink-0 rounded-[2px] bg-[#1C1C1C] flex items-center justify-center overflow-hidden`}
+      className={`${s.wrapper} flex-shrink-0 rounded-[2px] bg-charcoal flex items-center justify-center overflow-hidden`}
       aria-hidden="true"
     >
       {/* Outer groove */}
-      <div className={`relative ${s.ring} rounded-full border border-[#10B981]/15 flex items-center justify-center`}>
+      <div className={`relative ${s.ring} rounded-full border border-emerald/15 flex items-center justify-center`}>
         {/* Mid groove */}
-        <div className={`absolute ${s.mid} rounded-full border border-[#10B981]/20`} />
+        <div className={`absolute ${s.mid} rounded-full border border-emerald/20`} />
         {/* Inner groove */}
-        <div className={`absolute ${s.inner} rounded-full border border-[#10B981]/25`} />
+        <div className={`absolute ${s.inner} rounded-full border border-emerald/25`} />
         {/* Centre label */}
-        <div className={`relative ${s.dot} rounded-full bg-[#10B981]/25 flex items-center justify-center`}>
-          <div className={`${s.center} rounded-full bg-[#10B981]/60`} />
+        <div className={`relative ${s.dot} rounded-full bg-emerald/25 flex items-center justify-center`}>
+          <div className={`${s.center} rounded-full bg-emerald/60`} />
         </div>
       </div>
     </div>
@@ -81,11 +81,12 @@ export default function AlbumArt({ src, alt, size = 'md', className = '' }: Albu
 
   return (
     <div
-      className={`${s.wrapper} flex-shrink-0 rounded-[2px] bg-[#1C1C1C] overflow-hidden ${className}`}
+      className={`${s.wrapper} flex-shrink-0 rounded-[2px] bg-charcoal overflow-hidden ${className}`}
     >
       <img
         src={src}
         alt={alt}
+        loading="lazy"
         className="w-full h-full object-cover"
         onError={() => setHasError(true)}
       />

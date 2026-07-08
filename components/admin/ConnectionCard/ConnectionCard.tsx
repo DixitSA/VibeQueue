@@ -100,7 +100,7 @@ export default function ConnectionCard({ venueId, settings }: ConnectionCardProp
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-emerald animate-pulse" />
-          <span className="text-cream font-display font-semibold text-sm">Spotify Connected</span>
+          <h3 className="text-cream font-display font-semibold text-sm">Spotify Connected</h3>
         </div>
         <button
           onClick={handleRefreshDevices}
@@ -120,7 +120,7 @@ export default function ConnectionCard({ venueId, settings }: ConnectionCardProp
           Active Output
         </label>
         {devices.length === 0 ? (
-          <p className="text-cream/30 text-xs">No devices found — open Spotify on any device.</p>
+          <p className="text-cream/60 text-xs">No devices found — open Spotify on any device.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {devices.map((device) => (

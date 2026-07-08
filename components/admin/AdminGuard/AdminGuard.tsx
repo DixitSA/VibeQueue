@@ -109,11 +109,16 @@ export default function AdminGuard({ venueId, children }: AdminGuardProps) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <label htmlFor="admin-email" className="sr-only">
+            Email
+          </label>
           <input
+            id="admin-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
+            aria-label="Email"
             autoFocus
             autoComplete="username"
             className="
@@ -123,11 +128,17 @@ export default function AdminGuard({ venueId, children }: AdminGuardProps) {
               border-cream/10 focus:border-emerald/50
             "
           />
+          <label htmlFor="admin-password" className="sr-only">
+            Password
+          </label>
           <input
+            id="admin-password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
+            aria-label="Password"
+            aria-invalid={!!error}
             autoComplete="current-password"
             className={`
               w-full bg-cream/[0.03] border-2 rounded-xl px-6 py-4
@@ -137,7 +148,10 @@ export default function AdminGuard({ venueId, children }: AdminGuardProps) {
             `}
           />
           {error && (
-            <p className="text-red-500 text-[10px] uppercase tracking-widest font-bold text-center animate-in fade-in slide-in-from-top-1">
+            <p
+              role="alert"
+              className="text-red-500 text-[10px] uppercase tracking-widest font-bold text-center animate-in fade-in slide-in-from-top-1"
+            >
               {error}
             </p>
           )}

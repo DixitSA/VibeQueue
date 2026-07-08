@@ -66,10 +66,10 @@ export default function CurrentlyPlaying({ venueId }: CurrentlyPlayingProps) {
 
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-display uppercase tracking-[0.2em] text-cream/50 mb-0.5">Now Playing</p>
-            <h2 className="text-cream/40 font-display text-lg font-medium truncate leading-tight">
+            <h2 className="text-cream/60 font-display text-lg font-medium truncate leading-tight">
               Nothing playing
             </h2>
-            <p className="text-cream/30 text-sm truncate">Waiting for the venue&rsquo;s Spotify session</p>
+            <p className="text-cream/60 text-sm truncate">Waiting for the venue&rsquo;s Spotify session</p>
           </div>
         </div>
       </div>
@@ -103,11 +103,12 @@ export default function CurrentlyPlaying({ venueId }: CurrentlyPlayingProps) {
         </div>
       </div>
 
-      {/* Progress Bar Container */}
+      {/* Progress Bar Container — transform, not width, avoids a layout
+          recalculation on every poll tick. */}
       <div className="absolute bottom-0 left-0 w-full h-[2px] bg-cream/10">
         <div
-          className="h-full bg-emerald transition-all duration-300 ease-linear shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-          style={{ width: `${progressPct}%` }}
+          className="h-full w-full bg-emerald origin-left transition-transform duration-300 ease-linear shadow-emerald-glow-sm"
+          style={{ transform: `scaleX(${progressPct / 100})` }}
         />
       </div>
     </div>

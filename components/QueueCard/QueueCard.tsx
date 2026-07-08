@@ -120,6 +120,7 @@ export default function QueueCard({
       onTouchEnd={handleTouchEnd}
       onClick={() => setIsFlipped(!isFlipped)}
       aria-label={`Flip card for ${trackName} by ${artistName}`}
+      aria-expanded={isFlipped}
       className={`
         text-left appearance-none block relative w-full h-[80px]
         perspective-1000 cursor-pointer mb-3
@@ -192,8 +193,16 @@ export default function QueueCard({
           </div>
         </div>
 
-        {/* ── Back face ───────────────────────────────────────────────────── */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-charcoal border border-cream/20 px-4 py-3 flex items-center justify-between rounded-sm">
+        {/* ── Back face ─────────────────────────────────────────────────────
+             backface-visibility:hidden only hides this face visually — it
+             does not remove it from the tab order or a11y tree. Without
+             tabIndex/aria-hidden gating, a keyboard/screen-reader user would
+             hit an unlabeled "Upvote" button for every song before ever
+             flipping the card. Only expose it once flipped. ───────────── */}
+        <div
+          className="absolute inset-0 backface-hidden rotate-y-180 bg-charcoal border border-cream/20 px-4 py-3 flex items-center justify-between rounded-sm"
+          aria-hidden={!isFlipped}
+        >
           <div className="flex flex-col">
             <span
               className={`text-cream font-display text-2xl font-bold transition-colors ${
@@ -209,7 +218,13 @@ export default function QueueCard({
 
           <button
             disabled={isUpvoted || !uid}
+            tabIndex={isFlipped ? 0 : -1}
             onClick={handleUpvote}
+            aria-label={
+              isUpvoted
+                ? `${trackName} by ${artistName} — already upvoted`
+                : `Upvote ${trackName} by ${artistName}`
+            }
             className={`
               px-6 py-2 rounded-full font-display font-bold text-xs uppercase tracking-widest
               transition-all duration-300

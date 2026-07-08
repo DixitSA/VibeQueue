@@ -30,9 +30,9 @@ export default function ApprovalToggle({ venueId, manualApprovalMode }: Approval
   return (
     <div className="bg-cream/5 border border-cream/10 rounded-sm p-6">
       {/* Section label */}
-      <p className="text-[9px] uppercase tracking-[0.35em] text-cream/30 font-bold font-display mb-4">
+      <h3 className="text-[9px] uppercase tracking-[0.35em] text-cream/60 font-bold font-display mb-4">
         Approval Workflow
-      </p>
+      </h3>
 
       <button
         role="switch"
@@ -46,7 +46,7 @@ export default function ApprovalToggle({ venueId, manualApprovalMode }: Approval
           <span className="text-cream font-display font-semibold text-sm">
             Manual Approval Mode
           </span>
-          <span className="text-cream/40 text-xs leading-relaxed text-left">
+          <span className="text-cream/60 text-xs leading-relaxed text-left">
             {manualApprovalMode
               ? 'New requests are held for your review before appearing in the queue.'
               : 'New requests go straight to the queue — no review needed.'}

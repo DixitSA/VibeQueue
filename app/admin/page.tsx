@@ -51,7 +51,7 @@ export default function AdminPage() {
         {/* ── Header bar ──────────────────────────────────────────────────── */}
         <header className="flex items-center justify-between px-6 py-4 border-b border-cream/[0.07] flex-shrink-0 bg-charcoal/80 backdrop-blur-xl z-20">
           <div className="flex items-center gap-4">
-            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)] ${settings.spotifyConnected ? 'bg-emerald animate-pulse' : 'bg-cream/10'}`} />
+            <div className={`w-2 h-2 rounded-full shadow-emerald-glow-sm ${settings.spotifyConnected ? 'bg-emerald animate-pulse' : 'bg-cream/10'}`} />
             <h1 className="text-cream font-display font-bold text-base tracking-tight">
               VibeQueue
             </h1>

@@ -162,8 +162,8 @@ export default function ModerationQueue({ venueId, manualApprovalMode }: Moderat
 
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-cream/30 font-sans text-sm">Queue unavailable — {error.message}</p>
+      <div className="p-8 text-center" role="alert">
+        <p className="text-cream/60 font-sans text-sm">Queue unavailable — {error.message}</p>
       </div>
     );
   }
@@ -172,9 +172,9 @@ export default function ModerationQueue({ venueId, manualApprovalMode }: Moderat
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-baseline justify-between px-8 pt-8 pb-4 flex-shrink-0">
-        <p className="text-[9px] uppercase tracking-[0.35em] text-cream/30 font-bold font-display">
+        <h3 className="text-[9px] uppercase tracking-[0.35em] text-cream/60 font-bold font-display">
           Moderation Queue
-        </p>
+        </h3>
         {!loading && (
           <span className="text-cream/30 font-display text-xs">
             {approved.length + pending.length} song{approved.length + pending.length !== 1 ? 's' : ''}
