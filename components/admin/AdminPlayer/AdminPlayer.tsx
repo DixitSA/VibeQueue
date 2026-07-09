@@ -7,10 +7,11 @@
 import React, { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import Image from 'next/image';
 import AlbumArt from '@/components/AlbumArt/AlbumArt';
-import { getNowPlaying, skipTrack, getPlaybackQueue, queueTrack } from '@/lib/spotifyAdmin';
-import { deleteSong } from '@/lib/venueActions';
+import { getNowPlaying, skipTrack, queueTrack } from '@/lib/spotifyAdmin';
+import { deleteSong, updateVenueSettings } from '@/lib/venueActions';
 import { getAdminIdToken } from '@/lib/firebase';
 import { useModerationQueue } from '@/hooks/useModerationQueue';
+import { useVenueSettings } from '@/hooks/useVenueSettings';
 import type { NowPlaying } from '@/types';
 
 interface AdminPlayerProps {
@@ -34,15 +35,28 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
   // ── Spotify queue sync ───────────────────────────────────────────────────
   // Keeps at most one committed-but-not-yet-playing track sitting in
   // Spotify's real queue at all times, pulled from the vote-sorted Firestore
-  // queue — see RELEASE_PLAN.md / the queue-sync design notes for why: once
-  // a track is pushed to Spotify's queue it can't be un-queued or reordered
-  // (Spotify's API has no endpoint for that), so this keeps as much of the
-  // queue "live" to votes as possible, only locking in the very next pick.
+  // queue — once a track is pushed to Spotify's queue it can't be un-queued
+  // or reordered (Spotify's API has no endpoint for that), so this keeps as
+  // much of the queue "live" to votes as possible, only locking in the very
+  // next pick.
+  //
+  // Deliberately NOT using Spotify's own /me/player/queue endpoint to check
+  // "have I already queued something" — that endpoint also returns upcoming
+  // tracks from whatever playlist/album context is currently driving
+  // playback, so it's essentially never empty once any playlist is playing
+  // in the background (the normal way most venues play music). Instead we
+  // track our own last pick in venue_settings.lastAutoQueuedTrackId.
   const { approved } = useModerationQueue(venueId);
   const approvedRef = useRef(approved);
   useEffect(() => {
     approvedRef.current = approved;
   }, [approved]);
+
+  const { settings } = useVenueSettings(venueId);
+  const lastAutoQueuedRef = useRef<string | null>(settings.lastAutoQueuedTrackId ?? null);
+  useEffect(() => {
+    lastAutoQueuedRef.current = settings.lastAutoQueuedTrackId ?? null;
+  }, [settings.lastAutoQueuedTrackId]);
 
   const syncInFlightRef = useRef(false);
 
@@ -52,6 +66,7 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
     try {
       const idToken = await getAdminIdToken();
       const currentApproved = approvedRef.current;
+      const lastAutoQueued = lastAutoQueuedRef.current;
 
       // A queued song has started playing — drop it from "Up Next" so the
       // next most-voted song can take its place.
@@ -65,13 +80,20 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
         }
       }
 
-      // Only commit the next pick once Spotify's real queue is empty —
-      // never lock in more than one track ahead.
-      const queueState = await getPlaybackQueue(idToken, venueId);
-      if (queueState.queuedIds.length === 0) {
-        const next = currentApproved.find((s) => s.spotifyTrackId !== playing?.spotifyTrackId);
+      // Only commit a new pick once our previous pick has actually started
+      // playing (or we've never queued one yet) — never lock in more than
+      // one track ahead.
+      const ourPickIsNowPlaying = !!lastAutoQueued && playing?.spotifyTrackId === lastAutoQueued;
+      if (!lastAutoQueued || ourPickIsNowPlaying) {
+        const next = currentApproved.find(
+          (s) => s.spotifyTrackId !== playing?.spotifyTrackId && s.spotifyTrackId !== lastAutoQueued,
+        );
         if (next?.spotifyTrackId) {
           await queueTrack(idToken, venueId, next.spotifyTrackId);
+          await updateVenueSettings(idToken, venueId, { lastAutoQueuedTrackId: next.spotifyTrackId });
+          // Update immediately so a poll tick that fires before the
+          // Firestore listener round-trips doesn't re-queue the same pick.
+          lastAutoQueuedRef.current = next.spotifyTrackId;
           setAutoQueuedTitle(next.title);
         }
       }

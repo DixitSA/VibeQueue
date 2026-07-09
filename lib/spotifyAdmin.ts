@@ -6,7 +6,7 @@
 
 import { adminDb } from './firebaseAdmin';
 import { requireAdmin } from '@/lib/adminAuth';
-import type { SpotifyDevice, NowPlaying, PlaybackQueueState } from '@/types';
+import type { SpotifyDevice, NowPlaying } from '@/types';
 
 // ── Internal: token management ────────────────────────────────────────────────
 
@@ -117,29 +117,6 @@ export async function getNowPlaying(venueId: string): Promise<NowPlaying | null>
     durationMs: data.item.duration_ms ?? 0,
     isPlaying:  data.is_playing   ?? false,
     spotifyTrackId: data.item.id ?? null,
-  };
-}
-
-/**
- * Returns Spotify's actual playback queue (distinct from the Firestore
- * patron-voted queue) — used to decide whether the next top-voted song
- * still needs to be pushed to Spotify. Admin only.
- */
-export async function getPlaybackQueue(idToken: string, venueId: string): Promise<PlaybackQueueState> {
-  await requireAdmin(idToken, venueId);
-  const token = await getAccessToken(venueId);
-  const res   = await fetch('https://api.spotify.com/v1/me/player/queue', {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-
-  if (!res.ok) return { currentlyPlayingId: null, queuedIds: [] };
-
-  const data = await res.json();
-  return {
-    currentlyPlayingId: data.currently_playing?.id ?? null,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    queuedIds: (data.queue ?? []).map((t: any) => t.id).filter(Boolean),
   };
 }
 
