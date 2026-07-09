@@ -4,11 +4,13 @@
 // Left panel of the Command Center.
 // Polls getNowPlaying every 5 s and shows the current track with a Master Skip.
 
-import React, { useCallback, useEffect, useState, useTransition } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import Image from 'next/image';
 import AlbumArt from '@/components/AlbumArt/AlbumArt';
-import { getNowPlaying, skipTrack } from '@/lib/spotifyAdmin';
+import { getNowPlaying, skipTrack, getPlaybackQueue, queueTrack } from '@/lib/spotifyAdmin';
+import { deleteSong } from '@/lib/venueActions';
 import { getAdminIdToken } from '@/lib/firebase';
+import { useModerationQueue } from '@/hooks/useModerationQueue';
 import type { NowPlaying } from '@/types';
 
 interface AdminPlayerProps {
@@ -27,6 +29,58 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
   const [nowPlaying, setNowPlaying]   = useState<NowPlaying | null>(null);
   const [isSkipping, startTransition] = useTransition();
   const [localProgress, setLocalProgress] = useState(0);
+  const [autoQueuedTitle, setAutoQueuedTitle] = useState<string | null>(null);
+
+  // ── Spotify queue sync ───────────────────────────────────────────────────
+  // Keeps at most one committed-but-not-yet-playing track sitting in
+  // Spotify's real queue at all times, pulled from the vote-sorted Firestore
+  // queue — see RELEASE_PLAN.md / the queue-sync design notes for why: once
+  // a track is pushed to Spotify's queue it can't be un-queued or reordered
+  // (Spotify's API has no endpoint for that), so this keeps as much of the
+  // queue "live" to votes as possible, only locking in the very next pick.
+  const { approved } = useModerationQueue(venueId);
+  const approvedRef = useRef(approved);
+  useEffect(() => {
+    approvedRef.current = approved;
+  }, [approved]);
+
+  const syncInFlightRef = useRef(false);
+
+  const syncSpotifyQueue = useCallback(async (playing: NowPlaying | null) => {
+    if (!spotifyConnected || syncInFlightRef.current) return;
+    syncInFlightRef.current = true;
+    try {
+      const idToken = await getAdminIdToken();
+      const currentApproved = approvedRef.current;
+
+      // A queued song has started playing — drop it from "Up Next" so the
+      // next most-voted song can take its place.
+      if (playing?.spotifyTrackId) {
+        const justStarted = currentApproved.find((s) => s.spotifyTrackId === playing.spotifyTrackId);
+        if (justStarted) {
+          await deleteSong(idToken, venueId, justStarted.id);
+          // The "auto-queued next" pick has now become "now playing" —
+          // clear the stale label rather than keep announcing it.
+          setAutoQueuedTitle((prev) => (prev === justStarted.title ? null : prev));
+        }
+      }
+
+      // Only commit the next pick once Spotify's real queue is empty —
+      // never lock in more than one track ahead.
+      const queueState = await getPlaybackQueue(idToken, venueId);
+      if (queueState.queuedIds.length === 0) {
+        const next = currentApproved.find((s) => s.spotifyTrackId !== playing?.spotifyTrackId);
+        if (next?.spotifyTrackId) {
+          await queueTrack(idToken, venueId, next.spotifyTrackId);
+          setAutoQueuedTitle(next.title);
+        }
+      }
+    } catch (e) {
+      console.error('[VibeQueue] Spotify queue sync failed:', e);
+    } finally {
+      syncInFlightRef.current = false;
+    }
+  }, [spotifyConnected, venueId]);
 
   // ── Fetch now playing ────────────────────────────────────────────────────
   const fetchNowPlaying = useCallback(() => {
@@ -36,11 +90,12 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
         const data = await getNowPlaying(venueId);
         setNowPlaying(data);
         if (data) setLocalProgress(data.progressMs);
+        await syncSpotifyQueue(data);
       } catch {
         // Silently fail — Spotify may temporarily be unavailable
       }
     });
-  }, [venueId, spotifyConnected]);
+  }, [venueId, spotifyConnected, syncSpotifyQueue]);
 
   // Poll every 5 s (only when tab is visible)
   useEffect(() => {
@@ -178,6 +233,12 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
           <span className="text-[8px] uppercase tracking-[0.2em] text-emerald/60 font-bold font-display">Live Link</span>
         </div>
       </div>
+
+      {autoQueuedTitle && (
+        <p className="text-[9px] uppercase tracking-[0.2em] text-cream/40 font-bold font-display -mt-6">
+          Auto-queued next: {autoQueuedTitle}
+        </p>
+      )}
 
       {/* Track info — BILLBOARD MODE for distance legibility */}
       <div className="flex flex-col gap-2">
