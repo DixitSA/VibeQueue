@@ -9,4 +9,5 @@ export const DEFAULT_SETTINGS: VenueSettings = {
   vibeSeeds:          [],
   activeDeviceId:     null,
   spotifyConnected:   false,
+  lastAutoQueuedTrackId: null,
 };

@@ -47,6 +47,14 @@ export interface VenueSettings {
   spotifyAccessToken?: string;
   spotifyRefreshToken?: string;
   tokenExpiresAt?: Date | null;
+  /** Spotify track ID of the song the queue-sync loop most recently pushed
+   *  to Spotify's real queue, so it knows not to push another until this
+   *  one starts playing. Tracked here (not via Spotify's own /player/queue
+   *  endpoint) because that endpoint also returns upcoming tracks from
+   *  whatever playlist/album context is currently driving playback, which
+   *  makes "is the queue empty" useless as a signal once any playlist is
+   *  playing in the background — the normal way most venues play music. */
+  lastAutoQueuedTrackId?: string | null;
 }
 
 /** A Spotify Connect output device. */
@@ -69,12 +77,4 @@ export interface NowPlaying {
   /** Spotify track ID of the currently playing track — used to match it
    *  against the Firestore queue and detect when a queued song has started. */
   spotifyTrackId: string | null;
-}
-
-/** Spotify's actual playback queue state (distinct from the Firestore
- *  patron-voted queue) — used to decide whether the next top-voted song
- *  still needs to be pushed to Spotify. */
-export interface PlaybackQueueState {
-  currentlyPlayingId: string | null;
-  queuedIds: string[];
 }
