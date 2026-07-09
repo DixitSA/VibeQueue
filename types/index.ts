@@ -66,4 +66,15 @@ export interface NowPlaying {
   progressMs: number;
   durationMs: number;
   isPlaying: boolean;
+  /** Spotify track ID of the currently playing track — used to match it
+   *  against the Firestore queue and detect when a queued song has started. */
+  spotifyTrackId: string | null;
+}
+
+/** Spotify's actual playback queue state (distinct from the Firestore
+ *  patron-voted queue) — used to decide whether the next top-voted song
+ *  still needs to be pushed to Spotify. */
+export interface PlaybackQueueState {
+  currentlyPlayingId: string | null;
+  queuedIds: string[];
 }
