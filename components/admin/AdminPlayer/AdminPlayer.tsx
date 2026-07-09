@@ -80,14 +80,23 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
         }
       }
 
-      // Only commit a new pick once our previous pick has actually started
-      // playing (or we've never queued one yet) — never lock in more than
-      // one track ahead.
-      const ourPickIsNowPlaying = !!lastAutoQueued && playing?.spotifyTrackId === lastAutoQueued;
-      if (!lastAutoQueued || ourPickIsNowPlaying) {
-        const next = currentApproved.find(
-          (s) => s.spotifyTrackId !== playing?.spotifyTrackId && s.spotifyTrackId !== lastAutoQueued,
-        );
+      // Re-derive "approved minus whatever we just deleted above" so the
+      // pick below can't re-select a song still mid-removal.
+      const stillApproved = currentApproved.filter((s) => s.spotifyTrackId !== playing?.spotifyTrackId);
+
+      // Only commit a new pick once our previous pick is no longer sitting
+      // in the approved queue. Deliberately checked against durable
+      // Firestore state, not "does it exactly match nowPlaying right now" —
+      // that momentary check misses if the admin tab wasn't open at the
+      // exact instant the pick started playing (e.g. tab closed, laptop
+      // asleep), and once missed there'd be no way to ever recover: nothing
+      // would re-clear lastAutoQueuedTrackId, so every future addition to
+      // the approved queue would silently never get queued. Checking
+      // Firestore instead self-heals on the very next tick, whenever that is.
+      const lastPickStillPending = !!lastAutoQueued && stillApproved.some((s) => s.spotifyTrackId === lastAutoQueued);
+
+      if (!lastPickStillPending) {
+        const next = stillApproved[0]; // already vote-sorted by useModerationQueue
         if (next?.spotifyTrackId) {
           await queueTrack(idToken, venueId, next.spotifyTrackId);
           await updateVenueSettings(idToken, venueId, { lastAutoQueuedTrackId: next.spotifyTrackId });
@@ -95,6 +104,12 @@ export default function AdminPlayer({ venueId, spotifyConnected }: AdminPlayerPr
           // Firestore listener round-trips doesn't re-queue the same pick.
           lastAutoQueuedRef.current = next.spotifyTrackId;
           setAutoQueuedTitle(next.title);
+        } else if (lastAutoQueued) {
+          // Nothing left to queue right now, but our last pick has
+          // resolved — clear the marker so a future addition isn't stuck
+          // waiting on a song that already played.
+          await updateVenueSettings(idToken, venueId, { lastAutoQueuedTrackId: null });
+          lastAutoQueuedRef.current = null;
         }
       }
     } catch (e) {
